@@ -20,7 +20,9 @@ keylogging, no overlays.
 - **No dead gaps:** taps in the gaps between keys snap to the nearest key, with
   extra touch slop so a small finger drift does not cancel a press.
 - **Clipboard built in:** a clipboard button opens paste, copy, select-all,
-  clear and up to three recent clips.
+  clear and recent clips.
+- **Typing feel:** word suggestions and high-confidence autocorrect in the top
+  strip, nearest-key hit testing in the gaps, and two-thumb key presses.
 - Parakeet TDT-CTC 110M English, int8, running locally through sherpa-onnx and
   ONNX Runtime. Output is cased and punctuated.
 - Dictation inserts at the cursor, adds at most one leading space, and offers an
