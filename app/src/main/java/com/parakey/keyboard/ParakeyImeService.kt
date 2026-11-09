@@ -21,6 +21,7 @@ import android.view.WindowInsets
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
 import android.widget.Toast
+import com.parakey.keyboard.keyboard.KeyboardPage
 import com.parakey.keyboard.keyboard.KeyboardTheme
 import com.parakey.keyboard.keyboard.KeyboardView
 import com.parakey.keyboard.keyboard.ShiftState
@@ -58,8 +59,13 @@ class ParakeyImeService : InputMethodService(), KeyboardView.Listener {
     private var transcribing = false
     private var generation = 0
     private var passwordField = false
+    private var autoCorrectAllowed = true
     private var lastInsertedText: String? = null
     private var lastInsertedLength = 0
+    private var lastCorrectionApplied: String? = null
+    private var lastCorrectionRestore: String? = null
+    private var correctionsApplied = 0
+    private var suggestionsCommitted = 0
 
     private var audioManager: AudioManager? = null
     private var focusRequest: AudioFocusRequest? = null
@@ -68,6 +74,7 @@ class ParakeyImeService : InputMethodService(), KeyboardView.Listener {
         super.onCreate()
         instance = this
         settings = SettingsStore(this)
+        SuggestionEngine.initialize(this)
         modelRepository = ModelRepository(this)
         if (modelRepository.isInstalled()) {
             engine.preload()
@@ -95,6 +102,7 @@ class ParakeyImeService : InputMethodService(), KeyboardView.Listener {
         super.onStartInputView(info, restarting)
         if (!::keyboardView.isInitialized) return
         passwordField = info != null && isPasswordField(info)
+        autoCorrectAllowed = info != null && allowsAutoCorrect(info)
         keyboardView.hideClipboardMode()
         if (passwordField) {
             cancelDictation()
@@ -118,6 +126,7 @@ class ParakeyImeService : InputMethodService(), KeyboardView.Listener {
         candidatesEnd: Int,
     ) {
         super.onUpdateSelection(oldSelStart, oldSelEnd, newSelStart, newSelEnd, candidatesStart, candidatesEnd)
+        if (!dictationActive) refreshShiftAfterEdit()
         refreshSuggestions()
     }
 
@@ -138,21 +147,41 @@ class ParakeyImeService : InputMethodService(), KeyboardView.Listener {
 
     private fun refreshSuggestions() {
         if (!::keyboardView.isInitialized) return
-        if (passwordField) {
+        if (!settings.suggestionsEnabled || passwordField) {
             keyboardView.setSuggestions(emptyList())
             return
         }
-        keyboardView.setSuggestions(SuggestionEngine.suggestions(wordBeforeCursor()))
+        val before = currentInputConnection?.getTextBeforeCursor(96, 0)?.toString().orEmpty()
+        val word = SuggestionEngine.currentWord(before)
+        val previous = SuggestionEngine.previousWord(before)
+        val personal = settings.personalWords
+        val suggestions = SuggestionEngine.suggestions(word, previous, personal).toMutableList()
+        if (word.length >= 2 && !SuggestionEngine.isKnown(word, personal) && suggestions.size < 3) {
+            val addChip = "＋ $word"
+            if (!suggestions.contains(addChip)) suggestions.add(addChip)
+        }
+        keyboardView.setSuggestions(suggestions.take(3))
     }
 
     override fun onSuggestion(text: String) {
         if (text.isBlank()) return
+        if (text.startsWith("＋ ")) {
+            val word = text.removePrefix("＋ ").trim()
+            if (word.isNotEmpty()) {
+                settings.addPersonalWord(word)
+                toast("Added \"$word\" to your dictionary")
+                refreshSuggestions()
+            }
+            return
+        }
         val ic = currentInputConnection ?: return
+        hideUndo()
         val word = wordBeforeCursor()
         if (word.isNotEmpty()) {
             ic.deleteSurroundingText(word.length, 0)
         }
         ic.commitText("$text ", 1)
+        suggestionsCommitted++
         refreshShiftAfterEdit()
         refreshSuggestions()
     }
@@ -175,7 +204,31 @@ class ParakeyImeService : InputMethodService(), KeyboardView.Listener {
     override fun onText(text: String) {
         if (text.isEmpty()) return
         hideUndo()
-        currentInputConnection?.commitText(text, 1)
+        val ic = currentInputConnection
+        if (ic != null && settings.autocorrectEnabled && autoCorrectAllowed && text in setOf(".", ",", "!", "?")) {
+            if (ic.getTextBeforeCursor(1, 0)?.toString() == " ") {
+                ic.deleteSurroundingText(1, 0)
+            }
+            val word = wordBeforeCursor()
+            val correction = SuggestionEngine.correct(word, settings.personalWords)
+            if (correction != null && !correction.equals(word, ignoreCase = true)) {
+                val applied = "$correction$text"
+                val restore = "$word$text"
+                ic.deleteSurroundingText(word.length, 0)
+                ic.commitText(applied, 1)
+                lastCorrectionApplied = applied
+                lastCorrectionRestore = restore
+                lastInsertedText = null
+                lastInsertedLength = 0
+                correctionsApplied++
+                keyboardView.showUndo(true)
+                keyboardView.setStatus("Auto-corrected · UNDO")
+                refreshShiftAfterEdit()
+                refreshSuggestions()
+                return
+            }
+        }
+        ic?.commitText(text, 1)
         refreshShiftAfterEdit()
         refreshSuggestions()
     }
@@ -211,12 +264,21 @@ class ParakeyImeService : InputMethodService(), KeyboardView.Listener {
     override fun onSpace() {
         hideUndo()
         val ic = currentInputConnection ?: return
-        if (!passwordField) {
+        if (settings.autocorrectEnabled && autoCorrectAllowed) {
             val word = wordBeforeCursor()
-            val correction = SuggestionEngine.correct(word)
-            if (correction != null) {
+            val correction = SuggestionEngine.correct(word, settings.personalWords)
+            if (correction != null && !correction.equals(word, ignoreCase = true)) {
+                val applied = "$correction "
+                val restore = "$word "
                 ic.deleteSurroundingText(word.length, 0)
-                ic.commitText("$correction ", 1)
+                ic.commitText(applied, 1)
+                lastCorrectionApplied = applied
+                lastCorrectionRestore = restore
+                lastInsertedText = null
+                lastInsertedLength = 0
+                correctionsApplied++
+                keyboardView.showUndo(true)
+                keyboardView.setStatus("Auto-corrected · UNDO")
                 refreshShiftAfterEdit()
                 refreshSuggestions()
                 return
@@ -236,6 +298,26 @@ class ParakeyImeService : InputMethodService(), KeyboardView.Listener {
     }
 
     override fun onUndo() {
+        val corrected = lastCorrectionApplied
+        val restoreText = lastCorrectionRestore
+        if (corrected != null && restoreText != null) {
+            val ic = currentInputConnection
+            if (ic != null) {
+                val before = ic.getTextBeforeCursor(corrected.length, 0)?.toString()
+                if (before == corrected) {
+                    ic.deleteSurroundingText(corrected.length, 0)
+                    ic.commitText(restoreText, 1)
+                    toast("Correction undone")
+                } else {
+                    toast("Can't undo — the text moved")
+                }
+            }
+            lastCorrectionApplied = null
+            lastCorrectionRestore = null
+            keyboardView.showUndo(false)
+            refreshSuggestions()
+            return
+        }
         val text = lastInsertedText ?: return
         val ic = currentInputConnection
         if (ic == null) {
@@ -252,6 +334,8 @@ class ParakeyImeService : InputMethodService(), KeyboardView.Listener {
         }
         lastInsertedText = null
         lastInsertedLength = 0
+        lastCorrectionApplied = null
+        lastCorrectionRestore = null
         keyboardView.showUndo(false)
         keyboardView.setStatus("Tap the mic and speak")
     }
@@ -361,6 +445,19 @@ class ParakeyImeService : InputMethodService(), KeyboardView.Listener {
         }
     }
 
+    private fun allowsAutoCorrect(info: EditorInfo): Boolean {
+        val type = info.inputType
+        if (type and InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS != 0) return false
+        val variation = type and InputType.TYPE_MASK_VARIATION
+        return when (type and InputType.TYPE_MASK_CLASS) {
+            InputType.TYPE_CLASS_TEXT -> variation != InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS &&
+                variation != InputType.TYPE_TEXT_VARIATION_WEB_EMAIL_ADDRESS &&
+                variation != InputType.TYPE_TEXT_VARIATION_URI &&
+                variation != InputType.TYPE_TEXT_VARIATION_FILTER
+            else -> false
+        }
+    }
+
     private fun isPasswordField(info: EditorInfo): Boolean {
         val inputType = info.inputType
         val variation = inputType and InputType.TYPE_MASK_VARIATION
@@ -374,19 +471,21 @@ class ParakeyImeService : InputMethodService(), KeyboardView.Listener {
     }
 
     private fun initialShift(info: EditorInfo?): ShiftState {
-        if (info == null) return ShiftState.OFF
+        if (info == null || !settings.autoCapitalizeEnabled) return ShiftState.OFF
         val caps = currentInputConnection?.getCursorCapsMode(info.inputType) ?: 0
         return if (caps != 0) ShiftState.ON else ShiftState.OFF
     }
 
     private fun refreshShiftAfterEdit() {
         if (!::keyboardView.isInitialized) return
+        if (!settings.autoCapitalizeEnabled) {
+            keyboardView.setShiftState(ShiftState.OFF)
+            return
+        }
         if (keyboardView.shiftState() == ShiftState.CAPS) return
-        val before = currentInputConnection?.getTextBeforeCursor(2, 0)?.toString().orEmpty()
-        val atSentenceStart = before.isEmpty() ||
-            before.last() in ".?!\n" ||
-            (before.length >= 2 && before[before.length - 2] in ".?!" && before.last() == ' ')
-        keyboardView.setShiftState(if (atSentenceStart) ShiftState.ON else ShiftState.OFF)
+        val info = currentInputEditorInfo ?: return
+        val caps = currentInputConnection?.getCursorCapsMode(info.inputType) ?: 0
+        keyboardView.setShiftState(if (caps != 0) ShiftState.ON else ShiftState.OFF)
     }
 
     private fun toggleDictation() {
@@ -514,6 +613,8 @@ class ParakeyImeService : InputMethodService(), KeyboardView.Listener {
         ic.commitText(insertion, 1)
         lastInsertedText = insertion
         lastInsertedLength = insertion.length
+        lastCorrectionApplied = null
+        lastCorrectionRestore = null
         keyboardView.setStatus("Inserted ${text.length} chars · ${transcription.elapsedMs} ms")
         keyboardView.showUndo(true)
         refreshShiftAfterEdit()
@@ -617,7 +718,11 @@ class ParakeyImeService : InputMethodService(), KeyboardView.Listener {
         if (!::keyboardView.isInitialized) return null
         val base = keyboardView.debugState().trimEnd('}')
         return "$base,\"theme\":\"${settings.theme}\",\"modelReady\":${modelRepository.isInstalled()}," +
-            "\"passwordField\":$passwordField,\"transcribing\":$transcribing}"
+            "\"passwordField\":$passwordField,\"transcribing\":$transcribing," +
+            "\"autocorrect\":${settings.autocorrectEnabled},\"autoCorrectAllowed\":$autoCorrectAllowed," +
+            "\"suggestions\":${settings.suggestionsEnabled}," +
+            "\"autoCap\":${settings.autoCapitalizeEnabled},\"correctionsApplied\":$correctionsApplied," +
+            "\"suggestionsCommitted\":$suggestionsCommitted,\"dictSize\":${SuggestionEngine.dictionarySize()}}"
     }
 
     fun debugMicRect(): android.graphics.RectF? = if (::keyboardView.isInitialized) keyboardView.micRectForDebug() else null
@@ -670,6 +775,36 @@ class ParakeyImeService : InputMethodService(), KeyboardView.Listener {
     fun debugSetTheme(theme: String) {
         settings.theme = theme
         if (::keyboardView.isInitialized) keyboardView.setPalette(KeyboardTheme.palette(this, theme))
+    }
+
+    fun debugCorrect(word: String): String? =
+        SuggestionEngine.correct(word, settings.personalWords)
+
+    fun debugResetInputState() {
+        if (!::keyboardView.isInitialized) return
+        keyboardView.setShiftState(ShiftState.OFF)
+        keyboardView.setPage(KeyboardPage.LETTERS)
+        keyboardView.setSuggestions(emptyList())
+    }
+
+    fun debugSetAutocorrect(enabled: Boolean) {
+        settings.autocorrectEnabled = enabled
+        refreshSuggestions()
+    }
+
+    fun debugSetSuggestions(enabled: Boolean) {
+        settings.suggestionsEnabled = enabled
+        refreshSuggestions()
+    }
+
+    fun debugSetAutoCapitalize(enabled: Boolean) {
+        settings.autoCapitalizeEnabled = enabled
+        if (!enabled) keyboardView.setShiftState(ShiftState.OFF)
+    }
+
+    fun debugAddPersonalWord(word: String) {
+        settings.addPersonalWord(word)
+        refreshSuggestions()
     }
 
     fun debugClearInput() {

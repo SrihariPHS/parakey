@@ -24,6 +24,47 @@ class SettingsStore(context: Context) {
             prefs.edit().putBoolean("onboarding_done", value).apply()
         }
 
+    var autocorrectEnabled: Boolean
+        get() = prefs.getBoolean("autocorrect", true)
+        set(value) {
+            prefs.edit().putBoolean("autocorrect", value).apply()
+        }
+
+    var suggestionsEnabled: Boolean
+        get() = prefs.getBoolean("suggestions", true)
+        set(value) {
+            prefs.edit().putBoolean("suggestions", value).apply()
+        }
+
+    var autoCapitalizeEnabled: Boolean
+        get() = prefs.getBoolean("auto_capitalize", true)
+        set(value) {
+            prefs.edit().putBoolean("auto_capitalize", value).apply()
+        }
+
+    private val listSeparator = "\u001F"
+
+    var personalWords: Set<String>
+        get() = prefs.getString("personal_words", "")
+            .orEmpty()
+            .split(listSeparator)
+            .map { it.trim() }
+            .filter { it.isNotBlank() }
+            .toSet()
+        set(value) {
+            prefs.edit().putString("personal_words", value.take(250).joinToString(listSeparator)).apply()
+        }
+
+    fun addPersonalWord(word: String) {
+        val clean = word.trim()
+        if (clean.length < 2) return
+        personalWords = personalWords + clean
+    }
+
+    fun removePersonalWord(word: String) {
+        personalWords = personalWords - word
+    }
+
     private val clipboardSeparator = "\u001F"
 
     var clipboardHistory: List<String>

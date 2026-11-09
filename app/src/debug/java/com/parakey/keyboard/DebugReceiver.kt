@@ -63,6 +63,31 @@ class DebugReceiver : BroadcastReceiver() {
                     )
                     ok("set_clipboard")
                 }
+                "correct" -> {
+                    val word = intent.getStringExtra("word").orEmpty()
+                    val correction = ParakeyImeService.instance?.debugCorrect(word)
+                    JSONObject().put("ok", true).put("word", word).put("correction", correction ?: JSONObject.NULL)
+                }
+                "reset_input" -> {
+                    ParakeyImeService.instance?.debugResetInputState()
+                    ok("reset_input")
+                }
+                "autocorrect" -> {
+                    ParakeyImeService.instance?.debugSetAutocorrect(intent.getBooleanExtra("enabled", true))
+                    ok("autocorrect")
+                }
+                "suggestions" -> {
+                    ParakeyImeService.instance?.debugSetSuggestions(intent.getBooleanExtra("enabled", true))
+                    ok("suggestions")
+                }
+                "autocap" -> {
+                    ParakeyImeService.instance?.debugSetAutoCapitalize(intent.getBooleanExtra("enabled", true))
+                    ok("autocap")
+                }
+                "personal_add" -> {
+                    ParakeyImeService.instance?.debugAddPersonalWord(intent.getStringExtra("text").orEmpty())
+                    ok("personal_add")
+                }
                 "focus_field" -> {
                     val focused = TryActivity.instance?.debugFocus(intent.getStringExtra("field") ?: "message") ?: false
                     if (focused) ok("focus_field") else error("The test pad is not open")

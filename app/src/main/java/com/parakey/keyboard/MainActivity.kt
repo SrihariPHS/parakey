@@ -25,6 +25,7 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.ScrollView
+import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toast
 import com.parakey.keyboard.ui.colorWithAlpha
@@ -71,6 +72,7 @@ class MainActivity : android.app.Activity() {
     private lateinit var stepModel: StepRefs
     private lateinit var stepMic: StepRefs
     private lateinit var tryField: EditText
+    private var personalCount: TextView? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         settings = SettingsStore(this)
@@ -221,6 +223,8 @@ class MainActivity : android.app.Activity() {
 
         content.addView(sectionLabel("TRY IT"))
         content.addView(buildTryCard())
+        content.addView(sectionLabel("TYPING"))
+        content.addView(buildTypingCard())
         content.addView(sectionLabel("APPEARANCE"))
         content.addView(buildThemeCard())
         content.addView(buildFooter())
@@ -472,6 +476,98 @@ class MainActivity : android.app.Activity() {
         }
     }
 
+    private fun buildTypingCard(): View {
+        val card = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(16), dp(15), dp(16), dp(15))
+            background = roundedDrawable(this@MainActivity, colors.card, 18f, colors.border, 1f)
+            layoutParams = LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(10) }
+        }
+        card.addView(appText("Typing assistance", 16f, colors.text, bold = true))
+        card.addView(appText(
+            "Suggestions and autocorrect are dictionary-backed and run offline. Your words stay on this phone.",
+            12f,
+            colors.muted,
+        ).apply { setPadding(0, dp(4), 0, dp(10)) })
+
+        fun toggleRow(label: String, description: String, checked: Boolean, onChange: (Boolean) -> Unit): View {
+            val row = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+                setPadding(0, dp(6), 0, dp(6))
+            }
+            val textCol = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+            }
+            textCol.addView(appText(label, 13f, colors.text, bold = true))
+            textCol.addView(appText(description, 10.5f, colors.muted).apply { setPadding(0, dp(2), 0, 0) })
+            row.addView(textCol, LinearLayout.LayoutParams(0, -2, 1f))
+            val switch = Switch(this).apply {
+                isChecked = checked
+                setOnCheckedChangeListener { _, value -> onChange(value) }
+            }
+            row.addView(switch, LinearLayout.LayoutParams(-2, -2).apply { marginStart = dp(10) })
+            return row
+        }
+
+        card.addView(toggleRow(
+            "Suggestions",
+            "Word, next-word and add-to-dictionary chips",
+            settings.suggestionsEnabled,
+        ) { settings.suggestionsEnabled = it })
+        card.addView(toggleRow(
+            "Autocorrect",
+            "Fix one-letter slips when you type a space or punctuation",
+            settings.autocorrectEnabled,
+        ) { settings.autocorrectEnabled = it })
+        card.addView(toggleRow(
+            "Auto-capitalize",
+            "Capitalize the first letter of a sentence",
+            settings.autoCapitalizeEnabled,
+        ) { settings.autoCapitalizeEnabled = it })
+
+        val personalRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(0, dp(10), 0, 0)
+        }
+        val personalText = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        personalText.addView(appText("Personal dictionary", 13f, colors.text, bold = true))
+        personalCount = appText("", 10.5f, colors.muted).apply { setPadding(0, dp(2), 0, 0) }
+        personalText.addView(personalCount)
+        personalRow.addView(personalText, LinearLayout.LayoutParams(0, -2, 1f))
+        val addWord = appText("Add word", 12f, colors.accent, bold = true).apply {
+            gravity = Gravity.CENTER
+            setPadding(dp(12), dp(8), dp(12), dp(8))
+            setRoundedBackground(colorWithAlpha(colors.accent, 20), 10f)
+            setOnClickListener { showAddWordDialog() }
+        }
+        personalRow.addView(addWord)
+        card.addView(personalRow)
+        return card
+    }
+
+    private fun showAddWordDialog() {
+        val input = EditText(this).apply {
+            hint = "Name, place or word"
+            setHintTextColor(colors.muted)
+            setTextColor(colors.text)
+            textSize = 16f
+            setPadding(dp(12), dp(10), dp(12), dp(10))
+            setRoundedBackground(colors.background, 10f, strokeColor = colors.border, strokeWidthDp = 1f)
+        }
+        AlertDialog.Builder(this)
+            .setTitle("Add to personal dictionary")
+            .setView(input)
+            .setPositiveButton("Add") { _, _ ->
+                settings.addPersonalWord(input.text.toString())
+                refreshSetup()
+                Toast.makeText(this, "Word added — Parakey will leave it alone.", Toast.LENGTH_SHORT).show()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
     private fun buildThemeCard(): View {
         val card = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -604,6 +700,11 @@ class MainActivity : android.app.Activity() {
         setPill(stepMic.status, if (micGranted) "GRANTED" else "NEEDED", if (micGranted) colors.accent else colors.warning)
         stepMic.primary.text = if (micGranted) "Microphone allowed ✓" else "Allow microphone"
 
+        personalCount?.text = buildString {
+            append("${settings.personalWords.size} word")
+            if (settings.personalWords.size != 1) append("s")
+            append(" · never autocorrected")
+        }
         if (!isSelected) {
             tryField.hint = "Enable Parakey, then tap here to try it…"
         } else {

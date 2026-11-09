@@ -15,6 +15,12 @@ check.
   [csukuangfj/sherpa-onnx-nemo-parakeet_tdt_ctc_110m-en-36000](https://huggingface.co/csukuangfj/sherpa-onnx-nemo-parakeet_tdt_ctc_110m-en-36000).
 - Changes: dynamic int8 weight quantisation. See the model card for details.
 
+## AOSP LatinIME English dictionary
+
+- Source: https://android.googlesource.com/platform/packages/inputmethods/LatinIME/ (en_US_wordlist.combined.gz)
+- Licence: Apache-2.0
+- Use: the English word/frequency list bundled as `app/src/main/res/raw/words.txt` after filtering to common words (frequency >= 70), removing fragments and non-word tokens, and deduplicating case. It powers offline suggestions and autocorrect.
+
 ## sherpa-onnx
 
 - Source: https://github.com/k2-fsa/sherpa-onnx

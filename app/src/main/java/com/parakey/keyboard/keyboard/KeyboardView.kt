@@ -77,7 +77,12 @@ class KeyboardView @JvmOverloads constructor(
     private var spinnerStart = 0L
 
     private var keyRects: List<Pair<Key, RectF>> = emptyList()
+    private var keyTouchRects: List<Pair<Key, RectF>> = emptyList()
     private val keyById = mutableMapOf<String, RectF>()
+    private val secondaryPresses = mutableMapOf<Int, Pair<Key, RectF>>()
+    private var pressedSuggestionText: String? = null
+    private var pressedSuggestionRect: RectF? = null
+    private var lastShiftTapTime = 0L
     private var micRect = RectF()
     private var gearRect = RectF()
     private var clipRect = RectF()
@@ -230,6 +235,11 @@ class KeyboardView @JvmOverloads constructor(
 
     fun setSuggestions(items: List<String>) {
         if (suggestions == items) return
+        if (pressedTopBar == "suggestion") {
+            pressedTopBar = null
+            pressedSuggestionText = null
+            pressedSuggestionRect = null
+        }
         suggestions = items
         suggestionRects.clear()
         requestLayout()
@@ -297,6 +307,7 @@ class KeyboardView @JvmOverloads constructor(
         val rowHeight = ((availableHeight - (rowCount - 1) * gap) / rowCount).coerceAtLeast(30f * density)
 
         val newRects = ArrayList<Pair<Key, RectF>>(40)
+        val rows = ArrayList<MutableList<Pair<Key, RectF>>>(spec.rows.size)
         keyById.clear()
         var y = contentTop
         for (row in spec.rows) {
@@ -304,16 +315,34 @@ class KeyboardView @JvmOverloads constructor(
             val usable = width - 2f * sidePad - gap * (row.keys.size - 1)
             val unit = usable / totalWeight
             var x = sidePad + row.sideInset * unit
+            val rowRects = ArrayList<Pair<Key, RectF>>(row.keys.size)
             for (key in row.keys) {
                 val w = unit * key.weight
                 val rect = RectF(x, y, x + w, y + rowHeight)
                 newRects.add(key to rect)
+                rowRects.add(key to rect)
                 keyById[key.stableId] = rect
                 x += w + gap
             }
+            rows.add(rowRects)
             y += rowHeight + gap
         }
         keyRects = newRects
+        // Tile the whole key area: adjacent keys meet at the midpoint of the
+        // visual gap, first/last keys reach the view edge, and rows meet at
+        // their vertical midpoint. This removes dead strips and gap ties.
+        val touchRects = ArrayList<Pair<Key, RectF>>(newRects.size)
+        for ((rowIndex, rowRects) in rows.withIndex()) {
+            for ((index, entry) in rowRects.withIndex()) {
+                val (key, rect) = entry
+                val left = if (index == 0) 0f else (rowRects[index - 1].second.right + rect.left) / 2f
+                val right = if (index == rowRects.lastIndex) width.toFloat() else (rect.right + rowRects[index + 1].second.left) / 2f
+                val top = if (rowIndex == 0) contentTop else (rows[rowIndex - 1].first().second.bottom + rect.top) / 2f
+                val bottom = if (rowIndex == rows.lastIndex) height.toFloat() else (rect.bottom + rows[rowIndex + 1].first().second.top) / 2f
+                touchRects.add(key to RectF(left, top, right, bottom))
+            }
+        }
+        keyTouchRects = touchRects
 
         val micCx = width - dimens.topBarMicCenterFromRight * density
         val gearCx = width - dimens.topBarGearCenterFromRight * density
@@ -338,7 +367,7 @@ class KeyboardView @JvmOverloads constructor(
             val chipGap = 6f * density
             val innerPad = 5f * density
             val chipWidth = (suggestionRect.width() - innerPad * 2f - chipGap * (suggestions.size - 1)) / suggestions.size
-            val chipHeight = 26f * density
+            val chipHeight = 32f * density
             val top = suggestionRect.centerY() - chipHeight / 2f
             for (i in suggestions.indices) {
                 val left = suggestionRect.left + innerPad + i * (chipWidth + chipGap)
@@ -416,7 +445,8 @@ class KeyboardView @JvmOverloads constructor(
                     key.action == KeyAction.SHIFT && shift != ShiftState.OFF -> palette.accent
                     else -> palette.text
                 }
-                drawIcon(canvas, key.icon, rect.centerX(), rect.centerY(), min(rect.width(), rect.height()) * 0.38f, iconColor)
+                val drawnIcon = if (key.action == KeyAction.SHIFT && shift == ShiftState.CAPS) KeyIcon.CAPS else key.icon
+                drawIcon(canvas, drawnIcon, rect.centerX(), rect.centerY(), min(rect.width(), rect.height()) * 0.38f, iconColor)
             } else if (label.isNotEmpty()) {
                 textPaint.color = if (key.accent) palette.onAccent else palette.text
                 textPaint.typeface = if (key.special) Typeface.create("sans-serif-medium", Typeface.NORMAL) else Typeface.create("sans-serif", Typeface.NORMAL)
@@ -1000,19 +1030,24 @@ class KeyboardView @JvmOverloads constructor(
         }
 
         if (event.actionMasked == MotionEvent.ACTION_POINTER_DOWN) {
-            handler.removeCallbacksAndMessages(null)
             val index = event.actionIndex
+            val id = event.getPointerId(index)
             val hit = hitTest(event.getX(index), event.getY(index))
             if (hit != null) {
+                secondaryPresses[id] = hit
                 performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                performKey(hit.first)
             }
             return true
         }
         if (event.actionMasked == MotionEvent.ACTION_POINTER_UP) {
-            val id = event.getPointerId(event.actionIndex)
-            if (id == pressedPointerId) {
-                finishPress(event.getX(event.actionIndex), event.getY(event.actionIndex))
+            val index = event.actionIndex
+            val id = event.getPointerId(index)
+            val secondary = secondaryPresses.remove(id)
+            if (secondary != null) {
+                val hit = hitTest(event.getX(index), event.getY(index))
+                if (hit != null) performKey(hit.first)
+            } else if (id == pressedPointerId) {
+                finishPress(event.getX(index), event.getY(index))
             }
             return true
         }
@@ -1028,8 +1063,15 @@ class KeyboardView @JvmOverloads constructor(
                         pressedTopBar = topTarget
                         performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                     }
-                    suggestionRects.indexOfFirst { it.contains(x, y) } >= 0 -> {
-                        pressedTopBar = "suggestion:${suggestionRects.indexOfFirst { it.contains(x, y) }}"
+                    suggestionRects.indexOfFirst {
+                        RectF(it).apply { inset(-4f * resources.displayMetrics.density, -4f * resources.displayMetrics.density) }.contains(x, y)
+                    } >= 0 -> {
+                        val index = suggestionRects.indexOfFirst {
+                            RectF(it).apply { inset(-4f * resources.displayMetrics.density, -4f * resources.displayMetrics.density) }.contains(x, y)
+                        }
+                        pressedTopBar = "suggestion"
+                        pressedSuggestionText = suggestions.getOrNull(index)
+                        pressedSuggestionRect = suggestionRects.getOrNull(index)
                         performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                     }
                     undoAvailable && undoRect.contains(x, y) && suggestionRect.contains(x, y) -> {
@@ -1059,27 +1101,35 @@ class KeyboardView @JvmOverloads constructor(
                 return true
             }
             MotionEvent.ACTION_MOVE -> {
-                if (pressedKey != null) {
-                    val index = event.findPointerIndex(pressedPointerId)
-                    if (index < 0) return true
-                    val px = event.getX(index)
-                    val py = event.getY(index)
-                    val rect = pressedRect ?: return true
-                    val slop = 6f * resources.displayMetrics.density
-                    val expanded = RectF(rect)
-                    expanded.inset(-slop, -slop)
-                    if (!expanded.contains(px, py)) {
-                        pressedKey = null
-                        pressedRect = null
-                        handler.removeCallbacksAndMessages(null)
-                        invalidate()
+                val ids = ArrayList<Int>()
+                if (pressedPointerId >= 0) ids.add(pressedPointerId)
+                ids.addAll(secondaryPresses.keys)
+                for (id in ids) {
+                    val index = event.findPointerIndex(id)
+                    if (index < 0) continue
+                    val hit = hitTest(event.getX(index), event.getY(index))
+                    if (id == pressedPointerId) {
+                        if (hit != null && pressedKey?.stableId != hit.first.stableId) {
+                            if (pressedKey?.action == KeyAction.BACKSPACE) handler.removeCallbacksAndMessages(null)
+                            pressedKey = hit.first
+                            pressedRect = hit.second
+                            invalidate()
+                        }
+                    } else if (hit != null) {
+                        secondaryPresses[id] = hit
                     }
                 }
                 return true
             }
             MotionEvent.ACTION_UP -> {
                 activePointerId = -1
-                finishPress(x, y)
+                val id = event.getPointerId(0)
+                val secondary = secondaryPresses.remove(id)
+                if (secondary != null) {
+                    val hit = hitTest(x, y)
+                    if (hit != null) performKey(hit.first)
+                }
+                if (pressedPointerId != -1) finishPress(x, y)
                 return true
             }
             MotionEvent.ACTION_CANCEL -> {
@@ -1089,6 +1139,9 @@ class KeyboardView @JvmOverloads constructor(
                 pressedRect = null
                 pressedTopBar = null
                 pressedPointerId = -1
+                secondaryPresses.clear()
+                pressedSuggestionText = null
+                pressedSuggestionRect = null
                 invalidate()
                 return true
             }
@@ -1106,31 +1159,32 @@ class KeyboardView @JvmOverloads constructor(
                 top == "gear" -> if (topBarTarget(x, y) == "gear") listener?.onSettings()
                 top == "clip" -> if (topBarTarget(x, y) == "clip") listener?.onClipboardRequest()
                 top == "undo" -> if (undoRect.contains(x, y)) listener?.onUndo()
-                top.startsWith("suggestion:") -> {
-                    val index = top.removePrefix("suggestion:").toIntOrNull()
-                    if (index != null) {
-                        val rect = suggestionRects.getOrNull(index)
-                        if (rect != null && rect.contains(x, y)) {
-                            suggestions.getOrNull(index)?.let { listener?.onSuggestion(it) }
-                        }
-                    }
+                top == "suggestion" -> {
+                    val rect = pressedSuggestionRect
+                    val expanded = rect?.let { RectF(it).apply { inset(-4f * resources.displayMetrics.density, -4f * resources.displayMetrics.density) } }
+                    val text = pressedSuggestionText
+                    if (text != null && expanded != null && expanded.contains(x, y)) listener?.onSuggestion(text)
                 }
             }
             pressedPointerId = -1
+            pressedSuggestionText = null
+            pressedSuggestionRect = null
             return
         }
-        val key = pressedKey
+        val downKey = pressedKey
         val rect = pressedRect
         pressedKey = null
         pressedRect = null
         pressedPointerId = -1
+        pressedSuggestionText = null
+        pressedSuggestionRect = null
         invalidate()
-        val slop = 6f * resources.displayMetrics.density
-        val expanded = rect?.let { RectF(it).apply { inset(-slop, -slop) } }
-        if (key != null && expanded != null && expanded.contains(x, y) && !longPressFired) {
+        val releaseKey = hitTest(x, y)?.first ?: downKey
+        if (releaseKey != null && !longPressFired) {
             performClick()
-            performKey(key)
+            performKey(releaseKey)
         }
+        if (rect == null && downKey == null) return
     }
 
     override fun performClick(): Boolean {
@@ -1139,54 +1193,16 @@ class KeyboardView @JvmOverloads constructor(
     }
 
     private fun hitTest(x: Float, y: Float): Pair<Key, RectF>? {
-        val slop = 8f * resources.displayMetrics.density
-        var best: Pair<Key, RectF>? = null
-        var bestDistance = Float.MAX_VALUE
-        for ((key, rect) in keyRects) {
-            val expanded = RectF(rect)
-            expanded.inset(-slop, -slop)
-            if (!expanded.contains(x, y)) continue
-            val dx = when {
-                x < rect.left -> rect.left - x
-                x > rect.right -> x - rect.right
-                else -> 0f
-            }
-            val dy = when {
-                y < rect.top -> rect.top - y
-                y > rect.bottom -> y - rect.bottom
-                else -> 0f
-            }
-            val distance = hypot(dx, dy)
-            if (distance < bestDistance) {
-                bestDistance = distance
-                best = key to rect
+        for ((key, touchRect) in keyTouchRects) {
+            if (touchRect.contains(x, y)) {
+                return key to (keyById[key.stableId] ?: touchRect)
             }
         }
-        if (best == null) {
-            // Map the narrow side margins of the staggered rows to the nearest
-            // key in that row instead of leaving an inert strip.
-            var edgeBest: Pair<Key, RectF>? = null
-            var edgeDistance = Float.MAX_VALUE
-            for ((key, rect) in keyRects) {
-                if (y < rect.top - slop || y > rect.bottom + slop) continue
-                val dx = when {
-                    x < rect.left -> rect.left - x
-                    x > rect.right -> x - rect.right
-                    else -> 0f
-                }
-                if (dx < edgeDistance) {
-                    edgeDistance = dx
-                    edgeBest = key to rect
-                }
-            }
-            if (edgeBest != null && edgeDistance <= 26f * resources.displayMetrics.density) {
-                best = edgeBest
-            }
-        }
-        return best
+        return null
     }
 
     private fun performKey(key: Key) {
+        if (key.action != KeyAction.SHIFT) lastShiftTapTime = 0L
         when (key.action) {
             KeyAction.CHARACTER -> {
                 var text = key.output
@@ -1200,11 +1216,15 @@ class KeyboardView @JvmOverloads constructor(
                 }
             }
             KeyAction.SHIFT -> {
-                shift = when (shift) {
-                    ShiftState.OFF -> ShiftState.ON
-                    ShiftState.ON -> ShiftState.CAPS
-                    ShiftState.CAPS -> ShiftState.OFF
+                val now = SystemClock.uptimeMillis()
+                val doubleTap = now - lastShiftTapTime < 350L
+                shift = when {
+                    shift == ShiftState.CAPS -> ShiftState.OFF
+                    doubleTap -> ShiftState.CAPS
+                    shift == ShiftState.ON -> ShiftState.OFF
+                    else -> ShiftState.ON
                 }
+                lastShiftTapTime = now
                 invalidate()
             }
             KeyAction.BACKSPACE -> listener?.onBackspace()

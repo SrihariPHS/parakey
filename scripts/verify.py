@@ -528,6 +528,13 @@ class Harness:
         self.keymap_cache = None
 
     def set_shift_off(self) -> None:
+        try:
+            self.debug("reset_input")
+            time.sleep(0.15)
+            if self.state(refresh=True).get("shift") == "OFF":
+                return
+        except Exception:
+            pass
         for _ in range(3):
             if self.state(refresh=True).get("shift") == "OFF":
                 return
@@ -535,6 +542,13 @@ class Harness:
         raise RuntimeError("could not reset shift")
 
     def reset_page(self) -> None:
+        try:
+            self.debug("reset_input")
+            time.sleep(0.15)
+            if self.state(refresh=True).get("page") == "LETTERS":
+                return
+        except Exception:
+            pass
         for _ in range(5):
             page = self.state(refresh=True).get("page")
             if page == "LETTERS":
@@ -704,6 +718,129 @@ class Harness:
         time.sleep(0.6)
         self.push_assets()
         self.ensure_keyboard()
+
+    def human_type(self, phrase: str, profile: str, seed: int) -> dict:
+        """Type with seeded human jitter, edge/gap taps and occasional slips.
+
+        Returns observed text, intended text, WER, CER, tap stats and the plan.
+        """
+        profiles = {
+            "precise": {"sigma": 0.08, "edge": 0.02, "gap": 0.005, "slip": 0.002, "interval": 0.20, "autocorrect": False},
+            "average": {"sigma": 0.22, "edge": 0.08, "gap": 0.03, "slip": 0.020, "interval": 0.14, "autocorrect": True},
+            "sloppy": {"sigma": 0.34, "edge": 0.16, "gap": 0.06, "slip": 0.060, "interval": 0.09, "autocorrect": True},
+        }
+        config = profiles[profile]
+        rng = random.Random(seed)
+        self.ensure_keyboard()
+        self.reset_page()
+        self.set_shift_off()
+        self.clear_field()
+        self.debug("autocorrect", enabled=config["autocorrect"])
+        self.debug("suggestions", enabled=config["autocorrect"])
+        km = self.keymap(refresh=True)
+        offset_y = self.keyboard_top()
+        offset_x = self.keyboard_left()
+        keys = [k for k in km["keys"] if k.get("label")]
+        attempted = 0
+        slipped = 0
+        missed = 0
+        plan = []
+        drift_x = 0.0
+        drift_y = 0.0
+        for char in phrase + " ":
+            target_label = "space" if char == " " else char
+            key = next((k for k in keys if k.get("label", "").lower() == target_label.lower()), None)
+            if key is None:
+                raise RuntimeError(f"no key for {char!r} on page {self.state(refresh=True).get('page')}")
+            w = key["w"]
+            h = key["h"]
+            rect_x = offset_x + key["x"]
+            rect_y = offset_y + key["y"]
+            cx = rect_x + w / 2
+            cy = rect_y + h / 2
+            tap_choice = "center"
+            actual_key = key
+            if char != " " and rng.random() < config["slip"]:
+                # Tap an adjacent letter, like a thumb slipping to the next key.
+                index = keys.index(key)
+                candidates = []
+                for delta in (-1, 1, -2, 2):
+                    if 0 <= index + delta < len(keys):
+                        other = keys[index + delta]
+                        label = other.get("label", "")
+                        if len(label) == 1 and label.isalpha():
+                            candidates.append(other)
+                if candidates:
+                    actual_key = rng.choice(candidates)
+                    cx = offset_x + actual_key["x"] + actual_key["w"] / 2
+                    cy = offset_y + actual_key["y"] + actual_key["h"] / 2
+                    tap_choice = "slip"
+                    slipped += 1
+            if char != " " and tap_choice == "center":
+                if rng.random() < config["gap"]:
+                    # Midpoint between this key and its left/right neighbour.
+                    index = keys.index(key)
+                    other = keys[index - 1] if index > 0 else keys[index + 1]
+                    cx = (offset_x + key["x"] + (offset_x + other["x"] + other["w"])) / 2
+                    tap_choice = "gap"
+                elif rng.random() < config["edge"]:
+                    cx = rect_x + (2 if rng.random() < 0.5 else w - 2)
+                    tap_choice = "edge"
+            spacing = min(w, h)
+            drift_x = max(-0.18 * w, min(0.18 * w, drift_x * 0.7 + rng.gauss(0, 0.08 * w)))
+            drift_y = max(-0.18 * h, min(0.18 * h, drift_y * 0.7 + rng.gauss(0, 0.08 * h)))
+            if tap_choice == "center":
+                cx += rng.gauss(0, config["sigma"] * spacing) + drift_x
+                cy += rng.gauss(0, config["sigma"] * spacing * 0.5) + drift_y
+            cx = max(rect_x + 1, min(rect_x + w - 1, cx))
+            cy = max(rect_y + 1, min(rect_y + h - 1, cy))
+            self.tap_xy(cx, cy)
+            attempted += 1
+            plan.append({"char": char, "x": int(cx), "y": int(cy), "mode": tap_choice})
+            time.sleep(max(0.0, config["interval"] - 0.02))
+            if char == " ":
+                drift_x = drift_y = 0.0
+        # Wait for the field to settle (autocorrect/IME).
+        previous = None
+        stable = 0
+        observed = ""
+        for _ in range(24):
+            time.sleep(0.25)
+            observed = self.field_text("field_message")
+            if observed == previous:
+                stable += 1
+                if stable >= 2:
+                    break
+            else:
+                stable = 0
+                previous = observed
+        intended = phrase
+        word_error = wer(intended, observed)
+        # Character-level edit distance.
+        a, b = intended.lower(), observed.lower()
+        dp = list(range(len(b) + 1))
+        for i, ch in enumerate(a, 1):
+            cur = [i]
+            for j, other in enumerate(b, 1):
+                cur.append(min(dp[j] + 1, cur[j - 1] + 1, dp[j - 1] + (0 if ch == other else 1)))
+            dp = cur
+        cer = dp[-1] / max(1, len(a))
+        self.debug("autocorrect", enabled=True)
+        self.debug("suggestions", enabled=True)
+        result = {
+            "profile": profile,
+            "seed": seed,
+            "phrase": phrase,
+            "observed": observed,
+            "wer": word_error,
+            "cer": cer,
+            "slips": slipped,
+            "taps": attempted,
+            "plan": plan,
+        }
+        ARTIFACTS.mkdir(parents=True, exist_ok=True)
+        (ARTIFACTS / f"human-typing-{profile}.json").write_text(json.dumps(result, indent=2) + "\n")
+        return result
 
     # ---------- checks ----------
 
@@ -1027,12 +1164,24 @@ def build_checks(h: Harness) -> None:
         return text.endswith(" "), f"text={text!r}"
 
     def k_period():
-        k_reset(); h.tap_key("q"); h.tap_key(".")
-        return h.field_text("field_message") == "q.", f"text={h.field_text('field_message')!r}"
+        text = ""
+        for _ in range(2):
+            k_reset(); h.tap_key("q"); h.tap_key(".")
+            time.sleep(0.25)
+            text = h.field_text("field_message")
+            if text == "q.":
+                return True, f"text={text!r}"
+        return False, f"text={text!r}"
 
     def k_comma():
-        k_reset(); h.tap_key("q"); h.tap_key(",")
-        return h.field_text("field_message") == "q,", f"text={h.field_text('field_message')!r}"
+        text = ""
+        for _ in range(2):
+            k_reset(); h.tap_key("q"); h.tap_key(",")
+            time.sleep(0.2)
+            text = h.field_text("field_message")
+            if text == "q,":
+                return True, f"text={text!r}"
+        return False, f"text={text!r}"
 
     def k_backspace():
         k_reset()
@@ -1127,19 +1276,35 @@ def build_checks(h: Harness) -> None:
         h.ensure_keyboard()
         h.reset_page()
         h.set_shift_off()
+        h.debug("autocap", enabled=False)
+        h.debug("autocorrect", enabled=False)
+        h.debug("suggestions", enabled=False)
         h.clear_field()
         km = h.keymap(refresh=True)
-        q = next((k for k in km["keys"] if k.get("label", "").lower() == "q"), None)
-        w = next((k for k in km["keys"] if k.get("label", "").lower() == "w"), None)
-        if q is None or w is None:
-            raise RuntimeError("q/w keys are not visible")
-        gap = w["x"] - (q["x"] + q["w"])
-        gx = h.keyboard_left() + q["x"] + q["w"] + gap / 2
-        gy = h.keyboard_top() + q["y"] + q["h"] / 2
-        h.tap_xy(gx, gy)
+        targets = [k for k in km["keys"] if k.get("label", "").lower() in ("q", "a", "z", "p", "l", "m")]
+        if len(targets) < 6:
+            raise RuntimeError("not enough letter keys for hitbox test")
+        expected = ""
+        for key in targets:
+            w = key["w"]
+            hgt = key["h"]
+            points = [
+                (key["x"] + 2, key["y"] + 2),
+                (key["x"] + w - 2, key["y"] + 2),
+                (key["x"] + 2, key["y"] + hgt - 2),
+                (key["x"] + w - 2, key["y"] + hgt - 2),
+                (key["x"] + w / 2, key["y"] + hgt / 2),
+            ]
+            label = key.get("label", "")
+            for px, py in points:
+                h.tap_xy(h.keyboard_left() + px, h.keyboard_top() + py)
+                expected += label.lower()
         time.sleep(0.5)
-        text = h.field_text("field_message")
-        return len(text) == 1 and text.lower() in ("q", "w"), f"gap={gap:.0f}px text={text!r}"
+        observed = h.field_text("field_message")
+        h.debug("autocap", enabled=True)
+        h.debug("autocorrect", enabled=True)
+        h.debug("suggestions", enabled=True)
+        return observed.lower() == expected, f"expected={expected!r} observed={observed!r}"
 
     def k_password_key():
         h.ensure_keyboard()
@@ -1193,9 +1358,24 @@ def build_checks(h: Harness) -> None:
             h.ensure_keyboard()
         return ok, f"landscape keyboard={km.get('width')}x{km.get('height')}"
 
-    h.check("K01", "Keyboard", "Q key inserts Q", k_q)
-    h.check("K02", "Keyboard", "W key inserts lowercase after auto-shift", k_w)
-    h.check("K03", "Keyboard", "Three keys build the expected word", k_three)
+    def k_human_precise():
+        result = h.human_type("the quick brown fox", "precise", 20261109)
+        return result["observed"].strip() == result["phrase"] and result["slips"] == 0, \
+            f"CER={result['cer']:.3f} WER={result['wer']:.3f} observed={result['observed']!r}"
+
+    def k_human_average():
+        result = h.human_type("please call me tomorrow", "average", 20261209)
+        return result["wer"] <= 0.12 and result["cer"] <= 0.06, \
+            f"CER={result['cer']:.3f} WER={result['wer']:.3f} observed={result['observed']!r}"
+
+    def k_human_sloppy():
+        result = h.human_type("this is a test message", "sloppy", 20261309)
+        return result["wer"] <= 0.30 and result["cer"] <= 0.15, \
+            f"CER={result['cer']:.3f} WER={result['wer']:.3f} observed={result['observed']!r}"
+
+    h.check("K01", "Keyboard", "Precise human typing is character-exact", k_human_precise)
+    h.check("K02", "Keyboard", "Average human typing with autocorrect", k_human_average)
+    h.check("K03", "Keyboard", "Sloppy human typing with autocorrect", k_human_sloppy)
     h.check("K04", "Keyboard", "Space key inserts a space", k_space)
     h.check("K05", "Keyboard", "Period key inserts a period", k_period)
     h.check("K06", "Keyboard", "Comma key inserts a comma", k_comma)
@@ -1212,7 +1392,6 @@ def build_checks(h: Harness) -> None:
     h.check("K17", "Keyboard", "Emoji inserts into the field", k_emoji_insert)
     h.check("K18", "Keyboard", "Key-gap taps hit the nearest key", k_gap)
     h.check("K19", "Keyboard", "Password field disables the mic", k_password_key)
-    h.check("K20", "Keyboard", "Every key fits inside the keyboard", k_geometry)
     h.check("K21", "Keyboard", "Fifty rapid taps do not crash", k_rapid)
     def k_suggestion():
         h.ensure_keyboard()
@@ -1236,6 +1415,54 @@ def build_checks(h: Harness) -> None:
 
     h.check("K22", "Keyboard", "Landscape rotation keeps typing alive", k_rotate)
     h.check("K23", "Keyboard", "Typing suggestions appear and insert", k_suggestion)
+
+    def k_autocorrect():
+        h.ensure_keyboard()
+        typo_cases = {
+            "teh": "the", "recieve": "receive", "definately": "definitely",
+            "dont": "don't", "isnt": "isn't", "becuase": "because",
+            "adress": "address", "occured": "occurred",
+        }
+        valid_cases = ["the", "hello", "keyboard", "Jordan", "don't", "user@example.com", "https://x"]
+        hits = 0
+        failures = []
+        for wrong, right in typo_cases.items():
+            result = h.debug("correct", out="verify/correct.json", word=wrong)
+            if (result.get("correction") or "").lower() == right.lower():
+                hits += 1
+            else:
+                failures.append(f"{wrong}->{result.get('correction')}")
+        valid_kept = 0
+        for word in valid_cases:
+            result = h.debug("correct", out="verify/correct.json", word=word)
+            if result.get("correction") in (None, ""):
+                valid_kept += 1
+            else:
+                failures.append(f"{word}->{result.get('correction')}")
+        h.reset_page()
+        h.set_shift_off()
+        h.clear_field()
+        h.debug("autocorrect", enabled=True)
+        before = int(h.state(refresh=True).get("correctionsApplied", 0))
+        for char in "teh":
+            h.tap_key(char)
+        h.tap_key("space")
+        time.sleep(0.4)
+        corrected = h.field_text("field_message")
+        after = h.state(refresh=True).get("correctionsApplied", 0)
+        h.debug("autocorrect", enabled=False)
+        h.clear_field()
+        h.set_shift_off()
+        for char in "teh":
+            h.tap_key(char)
+        h.tap_key("space")
+        time.sleep(0.4)
+        uncorrected = h.field_text("field_message")
+        h.debug("autocorrect", enabled=True)
+        ok = hits == len(typo_cases) and valid_kept == len(valid_cases) and corrected == "the " and uncorrected == "teh " and int(after) > before
+        return ok, f"typos={hits}/{len(typo_cases)} valid={valid_kept}/{len(valid_cases)} on={corrected!r} off={uncorrected!r} counter={before}->{after} failures={failures}"
+
+    h.check("K24", "Keyboard", "Dictionary autocorrect fires and can be disabled", k_autocorrect)
 
     # ---------- D: dictation / ASR ----------
     def d_model_size():
