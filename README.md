@@ -34,9 +34,18 @@ keylogging, no overlays.
   SHA-256 check, grants the microphone and opens a test pad.
 - A 100-check verification suite, including a physical Moto G85 acceptance gate.
 
-## Try it on the Moto G85
+## Try it on Android
 
-1. Install the APK from the latest release, or build it:
+Parakey is built for **Android 8.0+ (API 26) on arm64-v8a phones**. The Moto G85
+(Android 16) is the reference device used for the live physical test, but the
+same APK should work on most modern Android phones. No Google Play Services,
+account or network connection is required after the one-time model download.
+See [`docs/COMPATIBILITY.md`](docs/COMPATIBILITY.md) for the exact requirements
+and OEM caveats.
+
+1. Install the signed APK from the
+   [latest release](https://github.com/SrihariPHS/parakey/releases/latest), or
+   build it:
    ```bash
    ./gradlew :app:assembleDebug
    adb install -r app/build/outputs/apk/debug/app-debug.apk
@@ -50,7 +59,9 @@ keylogging, no overlays.
    mic on the keyboard.
 
 The Moto G85 (Android 16, arm64-v8a) is the reference phone. Any Android 8.0+
-arm64 device with ~300 MB of free RAM for the model should work.
+arm64 device with ~300 MB of free RAM for the model should work. Other phones
+are supported in principle; the physical verification gate in this repository
+is tuned for the Moto G85.
 
 ## Build
 
@@ -82,8 +93,9 @@ privacy, ASR accuracy against six known WAV fixtures, latency, warm starts,
 AudioRecord capture, rotation, themes, monkey taps and the setup flow. Every
 check writes evidence to `verification/report.json` and `verification/REPORT.md`.
 
-- **99/100** is achievable on the emulator: the only missing point is the
-  physical Moto G85 gate.
+- The committed report in [`verification/REPORT.md`](verification/REPORT.md)
+  is the latest live run. **99/100** is achievable on the emulator: the only
+  missing point is the physical Moto G85 gate.
 - Connect the Moto G85 over USB or wireless ADB and rerun to reach **100/100**.
 - `--loop 3` reruns the suite until the threshold is met.
 
