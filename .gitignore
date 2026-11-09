@@ -29,3 +29,6 @@ verification/*.md
 
 # macOS
 .DS_Store
+
+# Relentless run artifacts
+.relentless/runs/

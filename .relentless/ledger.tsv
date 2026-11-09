@@ -1,0 +1,7 @@
+iteration	date	score	kept	hypothesis	evidence
+1	2026-11-09	59/100	yes	build a real IME + model pipeline	verification/report.json
+2	2026-11-09	76/100	yes	reliable force-stop/relaunch and autofill handling	verification/report.json
+3	2026-11-09	91/100	yes	key hitboxes, password privacy, model checksum	verification/report.json
+4	2026-11-09	96/100	yes	clipboard, suggestions, landscape, physical gate	verification/report.json
+5	2026-11-09	99/100	yes	human profiles, tiled hitboxes, dictionary autocorrect	verification/report.json
+6	2026-11-09	99/100	yes	contractions, double-space period, field gating	verification/report.json
