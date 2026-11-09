@@ -50,6 +50,7 @@ class TryActivity : android.app.Activity() {
     private lateinit var password: EditText
     private lateinit var status: TextView
     private lateinit var scroll: ScrollView
+    private lateinit var clearButton: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         settings = SettingsStore(this)
@@ -107,7 +108,17 @@ class TryActivity : android.app.Activity() {
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
         setIntent(intent)
+        if (intent?.getStringExtra("action") == "clear") {
+            debugClickClear()
+            return
+        }
         intent?.getStringExtra("focus")?.let { debugFocus(it) }
+    }
+
+    fun debugClickClear(): Boolean {
+        if (!::clearButton.isInitialized) return false
+        clearButton.performClick()
+        return true
     }
 
     override fun onDestroy() {
@@ -262,7 +273,7 @@ class TryActivity : android.app.Activity() {
             id = R.id.status_text
         }
         bottom.addView(status, LinearLayout.LayoutParams(0, -2, 1f))
-        val clear = text("Clear all", 12f, colors.accent, bold = true).apply {
+        clearButton = text("Clear all", 12f, colors.accent, bold = true).apply {
             id = R.id.btn_clear
             gravity = Gravity.CENTER
             setPadding(dp(14), dp(9), dp(14), dp(9))
@@ -275,7 +286,7 @@ class TryActivity : android.app.Activity() {
                 focusField(message)
             }
         }
-        bottom.addView(clear)
+        bottom.addView(clearButton)
         content.addView(bottom)
     }
 

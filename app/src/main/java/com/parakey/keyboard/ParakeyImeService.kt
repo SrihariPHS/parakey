@@ -284,6 +284,17 @@ class ParakeyImeService : InputMethodService(), KeyboardView.Listener {
                 return
             }
         }
+        if (autoCorrectAllowed && ic.getTextBeforeCursor(1, 0)?.toString() == " ") {
+            val two = ic.getTextBeforeCursor(2, 0)?.toString().orEmpty()
+            val beforeSpace = two.firstOrNull()
+            if (beforeSpace != null && (beforeSpace.isLetterOrDigit() || beforeSpace in ",;:")) {
+                ic.deleteSurroundingText(1, 0)
+                ic.commitText(". ", 1)
+                refreshShiftAfterEdit()
+                refreshSuggestions()
+                return
+            }
+        }
         ic.commitText(" ", 1)
         refreshShiftAfterEdit()
         refreshSuggestions()
@@ -775,6 +786,13 @@ class ParakeyImeService : InputMethodService(), KeyboardView.Listener {
     fun debugSetTheme(theme: String) {
         settings.theme = theme
         if (::keyboardView.isInitialized) keyboardView.setPalette(KeyboardTheme.palette(this, theme))
+    }
+
+    fun debugEditorText(): String? {
+        val ic = currentInputConnection ?: return null
+        val before = ic.getTextBeforeCursor(20_000, 0)?.toString().orEmpty()
+        val after = ic.getTextAfterCursor(20_000, 0)?.toString().orEmpty()
+        return before + after
     }
 
     fun debugCorrect(word: String): String? =

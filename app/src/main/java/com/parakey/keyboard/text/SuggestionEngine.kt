@@ -44,6 +44,17 @@ object SuggestionEngine {
         "theyre" to "they're", "wont" to "won't", "didnt" to "didn't",
         "doesnt" to "doesn't", "isnt" to "isn't", "wasnt" to "wasn't",
         "couldnt" to "couldn't", "shouldnt" to "shouldn't", "wouldnt" to "wouldn't",
+        "mightve" to "might've", "couldve" to "could've", "shouldve" to "should've",
+        "wouldve" to "would've", "mustve" to "must've", "mightnt" to "mightn't",
+        "youve" to "you've", "weve" to "we've", "theyve" to "they've",
+        "ive" to "I've", "im" to "I'm", "id" to "I'd", "youll" to "you'll",
+        "theyll" to "they'll", "youd" to "you'd", "thats" to "that's",
+        "whats" to "what's", "hows" to "how's", "wheres" to "where's",
+        "heres" to "here's", "theres" to "there's", "arent" to "aren't",
+        "werent" to "weren't", "hasnt" to "hasn't", "havent" to "haven't",
+        "hadnt" to "hadn't", "mustnt" to "mustn't", "neednt" to "needn't",
+        "liek" to "like", "adn" to "and", "taht" to "that", "jsut" to "just",
+        "becasue" to "because", "whta" to "what", "yuo" to "you",
     )
 
     private val bigrams = mapOf(
@@ -152,6 +163,7 @@ object SuggestionEngine {
     }
 
     fun correct(word: String, personalWords: Collection<String> = emptyList()): String? {
+        if (word.equals("i", ignoreCase = true) && word == "i") return "I"
         if (word.length < 2) return null
         if (word.any { it.isDigit() || it == '@' || it == '/' || it == ':' || it == '_' }) return null
         val lower = word.lowercase()

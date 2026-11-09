@@ -5,3 +5,5 @@ iteration	date	score	kept	hypothesis	evidence
 4	2026-11-09	96/100	yes	clipboard, suggestions, landscape, physical gate	verification/report.json
 5	2026-11-09	99/100	yes	human profiles, tiled hitboxes, dictionary autocorrect	verification/report.json
 6	2026-11-09	99/100	yes	contractions, double-space period, field gating	verification/report.json
+7	2026-11-09	95/100	no	restarted session reran the suite; 5 regressions vs the claimed 99 (K06, K07, D19, R04, R11)	verification/report.json @ 97b5fec
+7	2026-11-10	99/100	yes	contractions, spacing, tiled hitboxes, human profiles; physical gate passed earlier	verification/report.json

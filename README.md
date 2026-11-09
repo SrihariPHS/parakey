@@ -21,8 +21,10 @@ keylogging, no overlays.
   extra touch slop so a small finger drift does not cancel a press.
 - **Clipboard built in:** a clipboard button opens paste, copy, select-all,
   clear and recent clips.
-- **Typing feel:** word suggestions and high-confidence autocorrect in the top
-  strip, nearest-key hit testing in the gaps, and two-thumb key presses.
+- **Typing feel:** a 43k-word offline dictionary, word suggestions and
+  next-word predictions, high-confidence autocorrect (including contractions
+  such as `mightve → might've` and `liek → like`), double-space period,
+  nearest-key tiled hitboxes, and two-thumb key presses.
 - Parakeet TDT-CTC 110M English, int8, running locally through sherpa-onnx and
   ONNX Runtime. Output is cased and punctuated.
 - Dictation inserts at the cursor, adds at most one leading space, and offers an
@@ -96,6 +98,10 @@ check writes evidence to `verification/report.json` and `verification/REPORT.md`
 - The committed report in [`verification/REPORT.md`](verification/REPORT.md)
   is the latest live run. **99/100** is achievable on the emulator: the only
   missing point is the physical Moto G85 gate.
+- Typing is tested with seeded human profiles (precise/average/sloppy jitter,
+  edge/gap taps, adjacent-key slips) plus a raw hitbox-corner gate, dictionary
+  corrections and negative controls. See
+  [`docs/VERIFICATION.md`](docs/VERIFICATION.md).
 - Connect the Moto G85 over USB or wireless ADB and rerun to reach **100/100**.
 - `--loop 3` reruns the suite until the threshold is met.
 

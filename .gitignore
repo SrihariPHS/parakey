@@ -32,3 +32,5 @@ verification/*.md
 
 # Relentless run artifacts
 .relentless/runs/
+# raw relentless run logs and the run lock; goal.md, score.tsv and ledger.tsv stay committed
+.relentless/.score.lock

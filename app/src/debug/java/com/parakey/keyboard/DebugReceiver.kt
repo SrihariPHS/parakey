@@ -63,6 +63,10 @@ class DebugReceiver : BroadcastReceiver() {
                     )
                     ok("set_clipboard")
                 }
+                "editor_text" -> {
+                    val text = ParakeyImeService.instance?.debugEditorText() ?: ""
+                    JSONObject().put("ok", true).put("text", text)
+                }
                 "correct" -> {
                     val word = intent.getStringExtra("word").orEmpty()
                     val correction = ParakeyImeService.instance?.debugCorrect(word)

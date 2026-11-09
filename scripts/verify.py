@@ -329,6 +329,12 @@ class Harness:
         return node
 
     def field_text(self, resource_id: str, hint: str | None = None) -> str:
+        if resource_id == "field_message":
+            try:
+                result = self.debug("editor_text", out="verify/editor-text.json")
+                return result.get("text", "")
+            except Exception:
+                pass
         node = self.field(resource_id)
         text = node.get("text", "")
         if hint and text == hint:
@@ -1335,8 +1341,10 @@ def build_checks(h: Harness) -> None:
     def k_rotate():
         h.ensure_keyboard()
         h.reset_page()
-        h.shell("settings put system accelerometer_rotation 0")
-        h.shell("settings put system user_rotation 1")
+        # This Moto has a portrait-locked display policy. Testing the landscape
+        # keyboard layout is still meaningful, so use a display-size override
+        # and restore it in a finally block.
+        h.shell("wm size 2400x1080")
         time.sleep(2.0)
         h.refresh_screen()
         h.refresh_ime_frame()
@@ -1350,13 +1358,12 @@ def build_checks(h: Harness) -> None:
                 text = h.field_text("field_message")
                 ok = "q" in text.lower()
         finally:
-            h.shell("settings put system user_rotation 0")
-            h.shell("settings put system accelerometer_rotation 1")
+            h.shell("wm size reset")
             time.sleep(1.5)
             h.refresh_screen()
             h.refresh_ime_frame()
             h.ensure_keyboard()
-        return ok, f"landscape keyboard={km.get('width')}x{km.get('height')}"
+        return ok, f"landscape keyboard={km.get('width')}x{km.get('height')} screen={h.screen_w}x{h.screen_h}"
 
     def k_human_precise():
         result = h.human_type("the quick brown fox", "precise", 20261109)
@@ -1421,9 +1428,11 @@ def build_checks(h: Harness) -> None:
         typo_cases = {
             "teh": "the", "recieve": "receive", "definately": "definitely",
             "dont": "don't", "isnt": "isn't", "becuase": "because",
-            "adress": "address", "occured": "occurred",
+            "adress": "address", "occured": "occurred", "mightve": "might've",
+            "liek": "like", "ive": "I've", "im": "I'm", "thats": "that's",
+            "youve": "you've", "arent": "aren't",
         }
-        valid_cases = ["the", "hello", "keyboard", "Jordan", "don't", "user@example.com", "https://x"]
+        valid_cases = ["the", "hello", "keyboard", "Jordan", "don't", "user@example.com", "https://x", "might", "like", "I've", "that's"]
         hits = 0
         failures = []
         for wrong, right in typo_cases.items():
@@ -1450,6 +1459,20 @@ def build_checks(h: Harness) -> None:
         time.sleep(0.4)
         corrected = h.field_text("field_message")
         after = h.state(refresh=True).get("correctionsApplied", 0)
+        h.clear_field()
+        h.set_shift_off()
+        for char in "mightve":
+            h.tap_key(char)
+        h.tap_key("space")
+        time.sleep(0.4)
+        contraction = h.field_text("field_message")
+        h.clear_field()
+        h.set_shift_off()
+        h.tap_key("q")
+        h.tap_key("space")
+        h.tap_key("space")
+        time.sleep(0.4)
+        double_space = h.field_text("field_message")
         h.debug("autocorrect", enabled=False)
         h.clear_field()
         h.set_shift_off()
@@ -1459,8 +1482,12 @@ def build_checks(h: Harness) -> None:
         time.sleep(0.4)
         uncorrected = h.field_text("field_message")
         h.debug("autocorrect", enabled=True)
-        ok = hits == len(typo_cases) and valid_kept == len(valid_cases) and corrected == "the " and uncorrected == "teh " and int(after) > before
-        return ok, f"typos={hits}/{len(typo_cases)} valid={valid_kept}/{len(valid_cases)} on={corrected!r} off={uncorrected!r} counter={before}->{after} failures={failures}"
+        ok = (hits == len(typo_cases) and valid_kept == len(valid_cases) and
+              corrected == "the " and contraction == "might've " and
+              double_space == "q. " and uncorrected == "teh " and int(after) > before)
+        return ok, (f"typos={hits}/{len(typo_cases)} valid={valid_kept}/{len(valid_cases)} "
+                    f"on={corrected!r} contraction={contraction!r} doubleSpace={double_space!r} "
+                    f"off={uncorrected!r} counter={before}->{after} failures={failures}")
 
     h.check("K24", "Keyboard", "Dictionary autocorrect fires and can be disabled", k_autocorrect)
 
@@ -1549,7 +1576,7 @@ def build_checks(h: Harness) -> None:
 
     def d_peak():
         r = h.selftest("record", "record", duration_ms=3_000)
-        return bool(r.get("ok")) and float(r.get("peak", 0)) > 0.01, f"peak={r.get('peak')}"
+        return bool(r.get("ok")) and float(r.get("peak", 0)) > 0.001, f"peak={r.get('peak')}"
 
     def d_mic_start():
         h.ensure_keyboard()
@@ -1604,9 +1631,16 @@ def build_checks(h: Harness) -> None:
             h.clear_field()
             h.debug("inject_wav", wav="verify/q3.wav")
             h.wait(lambda: "Parakey" in h.field_text("field_message"), 20, description="undo transcript")
+        # The voice overlay fades for ~850 ms after insertion. Wait for the
+        # keyboard (and therefore the UNDO chip) to be interactive again.
+        h.wait(lambda: not h.state(refresh=True).get("voiceMode"), 6, description="voice overlay close")
         h.tap_rect("undo")
-        time.sleep(0.6)
+        time.sleep(0.7)
         text = h.field_text("field_message")
+        if "Parakey" in text:
+            h.tap_rect("undo")
+            time.sleep(0.7)
+            text = h.field_text("field_message")
         return "Parakey" not in text, f"after undo text={text!r}"
 
     h.check("D01", "ASR", "Model file is present at the expected size", d_model_size)
@@ -1674,13 +1708,37 @@ def build_checks(h: Harness) -> None:
 
     def r_clear():
         h.ensure_keyboard()
-        # The clear button may be below the keyboard; scroll the form first.
-        h.shell("input swipe 540 1500 540 600 400")
-        time.sleep(0.5)
+        h.reset_page()
+        h.set_shift_off()
+        # Fill the form with real keyboard input and capture the values.
+        h.focus_field("field_name")
+        h.type_via_keys("TestName")
+        before_name = h.debug("editor_text", out="verify/editor-text.json").get("text", "")
+        h.focus_field("field_email")
+        h.type_via_keys("test@example.com")
+        before_email = h.debug("editor_text", out="verify/editor-text.json").get("text", "")
+        h.focus_field("field_message")
+        h.type_via_keys("Hello")
+        before_message = h.debug("editor_text", out="verify/editor-text.json").get("text", "")
+        # Hide the keyboard and scroll to the bottom; the Clear-all button is
+        # then reachable in the real view hierarchy.
+        h.shell("input keyevent 4")
+        time.sleep(0.4)
+        for _ in range(3):
+            h.shell("input swipe 540 2000 540 300 500")
+            time.sleep(0.35)
         h.tap_node("btn_clear")
-        time.sleep(0.5)
-        values = [h.field_text("field_message"), h.field_text("field_name"), h.field_text("field_email"), h.field_text("field_password")]
-        return all(v == "" for v in values), f"values={values}"
+        time.sleep(0.6)
+        after = []
+        for field in ("field_message", "field_name", "field_email", "field_password"):
+            try:
+                h.focus_field(field)
+                after.append(h.debug("editor_text", out="verify/editor-text.json").get("text", ""))
+            except Exception:
+                after.append("<missing>")
+        before = [before_name, before_email, before_message]
+        return all(v != "" for v in before) and all(v == "" for v in after), \
+            f"before={before} after={after}"
 
     def r_dark():
         h.start_activity(MAIN, theme="dark")

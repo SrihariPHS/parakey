@@ -153,6 +153,7 @@ class KeyboardView @JvmOverloads constructor(
     fun currentPage(): KeyboardPage = page
 
     fun setShiftState(next: ShiftState) {
+        if (next == ShiftState.OFF) lastShiftTapTime = 0L
         if (shift == next) return
         shift = next
         invalidate()
