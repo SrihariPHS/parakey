@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Parakey</string>
+    <string name="ime_name">Parakey Keyboard</string>
+    <string name="subtype_english">English (US)</string>
+    <string name="ime_description">A Gboard-style keyboard with private, on-device Parakeet voice typing.</string>
+</resources>

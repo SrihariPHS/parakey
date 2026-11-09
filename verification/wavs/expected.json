@@ -1,0 +1,8 @@
+{
+  "q1.wav": "The quick brown fox jumps over the lazy dog.",
+  "q2.wav": "Please remind me to buy milk and eggs on the way home.",
+  "q3.wav": "Parakey is a private voice keyboard that runs entirely on this phone.",
+  "q4.wav": "Hello world, this is a test of the speech recognition model.",
+  "q5.wav": "I would like a large coffee with oat milk, please.",
+  "long.wav": "Parakey is a private voice keyboard. It runs the Parakeet speech model directly on your phone. No audio is sent to a server, and no account is required. Tap the microphone, speak naturally, and your words appear in the text field. The model is small, fast, and works without a network connection."
+}

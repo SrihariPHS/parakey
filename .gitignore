@@ -1,0 +1,31 @@
+# Android / Gradle
+.gradle/
+build/
+local.properties
+*.iml
+.idea/
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Signing material
+*.jks
+*.keystore
+keystore.properties
+
+# Models are downloaded, never committed
+model.int8.onnx
+model.onnx
+tokens.txt
+*.part
+
+# Verification output (keep the report templates)
+verification/artifacts/
+verification/*.json
+verification/*.md
+!verification/REPORT.template.md
+!verification/REPORT.md
+!verification/report.json
+
+# macOS
+.DS_Store
