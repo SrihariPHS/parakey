@@ -19,7 +19,7 @@ Every user request is mapped to the artifact that proves it. Check IDs come from
 | 12 | Recently used emoji move to the front | `SettingsStore.emojiRecents`, `KeyboardLayouts.emoji` | K17, JVM `recentEmojiMoveToTheFrontWithoutChangingPageSize` |
 | 13 | Works on Moto G85 and other Android 8.0+ arm64 phones | `minSdk 26`; one APK with `abiFilters` arm64-v8a + x86_64; compatibility doc | B03, B09–B11, `docs/COMPATIBILITY.md`; **API 26 and other phones are unexercised**; Moto R11 is **UNPROVEN in the current report** |
 | 14 | 100-check live gate, ≥99/100 | `scripts/verify.py`, `scripts/gate.sh`, `gate-guards.py` | latest `verification/REPORT.md`: 99/100, all 99 automated checks pass, R11 pending |
-| 15 | Signed release on GitHub, no debug hooks | `app/build.gradle.kts`, debug-only manifest | v1.0.3 asset SHA-256 and tag are recorded in `verification/REPORT.md`; apksigner CN=Parakey; no DebugReceiver/SelfTestActivity; B14/P03 |
+| 15 | Signed release on GitHub, no debug hooks | `app/build.gradle.kts`, debug-only manifest | v1.0.3 asset SHA-256 `18a3bc77cd268b7f9a6656e10b01f6f00d36c935fc8ec3e3b9aa5b1cc0617a3d`; apksigner CN=Parakey; no DebugReceiver/SelfTestActivity; B14/P03 |
 | 16 | Phone coordinated with other agents, PIN never stored | session coordination; PIN never written to a file | no PIN value in tracked files or history; thread messages are session evidence, not repo evidence |
 | 17 | Multiple agents used to audit the work | two early audits plus five feature-design agents; three deepseek-v4.1-flash auditors completed (traceability, release artifact, feature completeness) | audit findings are folded into the fixes below; the audit transcripts themselves are session evidence, not committed files |
 

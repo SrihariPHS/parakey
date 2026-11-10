@@ -2,12 +2,12 @@
 
 **Score: 99/100** (99/100 checks, threshold 99)
 
-- Generated: 2026-11-10T21:52:17+00:00
+- Generated: 2026-11-10T22:02:56+00:00
 - Device: sdk_gphone64_arm64 · Android 15 · arm64-v8a (emulator)
 - Serial: `redacted`
-- APK: `8eeaf06d59f361e4…`
+- APK: `27ad62594bc2fc70…`
 - Model: `9177a9146cf32ee0…`
-- Duration: 515s
+- Duration: 484s
 
 > The physical Moto G85 gate is pending. This run scores 99/100 on the
 > emulator. Connect the phone and rerun to reach 100/100.
@@ -40,15 +40,15 @@
 | P07 | Privacy | Model URL is HTTPS | PASS | MODEL_URL=https://huggingface.co/VocaHQ/sherpa-onnx-nemo-parakeet-tdt-ctc-110m-en-int8/res |
 | P08 | Privacy | Dictation path makes no network calls | PASS | network references in dictation path=[] |
 | I01 | IME | ADB device is online | PASS | state=device model=sdk_gphone64_arm64 |
-| I02 | IME | Debug APK is installed | PASS | package:/data/app/~~7fPCK1nOU4j-OuvxxfEr5Q==/com.parakey.keyboard-_QQCSanA1QkLUNOEw_JZsQ==/base.apk |
-| I03 | IME | Setup activity launches | PASS | topResumedActivity=ActivityRecord{73b24bb u0 com.parakey.keyboard/.MainActivity t1164} |
+| I02 | IME | Debug APK is installed | PASS | package:/data/app/~~vkPh3fn-NG9Cw97JBsQFOA==/com.parakey.keyboard-GRJZ7BIj5FZbXM2f8PKMrA==/base.apk |
+| I03 | IME | Setup activity launches | PASS | topResumedActivity=ActivityRecord{a1bc34a u0 com.parakey.keyboard/.MainActivity t1171} |
 | I04 | IME | Setup header renders | PASS | setup header renders |
 | I05 | IME | Speech model is ready on device | PASS | modelReady=True |
 | I06 | IME | Parakey IME is listed | PASS | Parakey IME is listed |
 | I07 | IME | Parakey IME is enabled | PASS | Parakey IME is enabled |
 | I08 | IME | Parakey IME is selected | PASS | default_input_method=com.parakey.keyboard/.ParakeyImeService |
 | I09 | IME | IME service is running | PASS | service state={'voiceMode': False, 'recording': False, 'processing': False, 'clipboardMode': False, 'suggestions': True, 'micEnabled': True, 'page': 'LETTERS', 'shift': 'ON', 'width': 1080, 'height': 819, 'bottomInset': 63, 'numberRow': False, 'alternatePopup': False, 'alternateSelected': -1, 'curso |
-| I10 | IME | Test pad launches | PASS | topResumedActivity=ActivityRecord{9315df9 u0 com.parakey.keyboard/.TryActivity t1165} |
+| I10 | IME | Test pad launches | PASS | topResumedActivity=ActivityRecord{997589b u0 com.parakey.keyboard/.TryActivity t1172} |
 | I11 | IME | Message field is focused | PASS | focused=true |
 | I12 | IME | Software keyboard is shown | PASS | shown=True |
 | I13 | IME | Keyboard height is sane | PASS | keyboard height=819px |
@@ -90,12 +90,12 @@
 | D08 | ASR | Fixture q4 transcription | PASS | WER=0.000 text='Hello world. This is a test of the speech recognition model' |
 | D09 | ASR | Fixture q5 transcription | PASS | WER=0.000 text='I would like a large coffee with oat milk. please' |
 | D10 | ASR | Long audio transcription | PASS | WER=0.019 audioMs=17795 |
-| D11 | ASR | q1 real-time factor | PASS | RTF=0.06370192307692307 |
-| D12 | ASR | q3 real-time factor | PASS | RTF=0.05357628501495785 |
-| D13 | ASR | Long audio real-time factor | PASS | RTF=0.027985389154256815 |
-| D14 | ASR | q3 latency | PASS | elapsedMs=197 |
+| D11 | ASR | q1 real-time factor | PASS | RTF=0.10376602564102565 |
+| D12 | ASR | q3 real-time factor | PASS | RTF=0.03045961381561055 |
+| D13 | ASR | Long audio real-time factor | PASS | RTF=0.0265805001404889 |
+| D14 | ASR | q3 latency | PASS | elapsedMs=112 |
 | D16 | ASR | Empty audio is handled | PASS | {'ok': True, 'text': '', 'elapsedMs': 0, 'audioMs': 0, 'mode': 'empty'} |
-| D17 | ASR | Very short audio is handled | PASS | {'ok': True, 'text': '', 'elapsedMs': 31, 'audioMs': 100, 'mode': 'short'} |
+| D17 | ASR | Very short audio is handled | PASS | {'ok': True, 'text': '', 'elapsedMs': 18, 'audioMs': 100, 'mode': 'short'} |
 | D18 | ASR | AudioRecord captures 16 kHz samples | PASS | sampleCount=48000 |
 | D19 | ASR | AudioRecord captures non-silence | PASS | loopback peak=1.0 samples=48000 attempts=1 |
 | D20 | ASR | Mic key starts recording | PASS | voiceMode=True recording=True |
@@ -110,7 +110,7 @@
 | R04 | Real life | Clear-all button clears the form | PASS | before=['TestName', 'test@example.com', 'Hello'] after=['', '', '', ''] |
 | R06 | Real life | Clipboard copy and paste work | PASS | first='FIRST_CLIP' second='COPY_SELECTION' |
 | R07 | Real life | Setup status shows ready and selected | PASS | setup shows model READY and keyboard ENABLED/SELECTED |
-| R09 | Real life | Random-tap monkey run is crash-free | PASS | pid=10459 crash=False |
+| R09 | Real life | Random-tap monkey run is crash-free | PASS | pid=23612 crash=False |
 | R10 | Real life | Relaunch keeps IME and model ready | PASS | default=com.parakey.keyboard/.ParakeyImeService modelReady=True shown=True |
 | R12 | Real life | Zero app crashes in the full suite | PASS | no FATAL EXCEPTION from com.parakey.keyboard |
 | R11 | Physical | Moto G85 speaker-loopback mic gate | FAIL | PENDING: no physical phone. Connect the Moto G85 with USB debugging (or wireless ADB) and rerun scripts/verify.py. |

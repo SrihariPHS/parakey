@@ -30,6 +30,19 @@ behaviour: System theme, mint accent, number row off, sound and haptics on.
 - Existing dictionary autocorrect, contractions, suggestions, double-space
   period, tiled hitboxes and two-thumb typing are unchanged.
 
+## Fixes in 1.0.3
+
+- The test pad now follows the AMOLED theme and accent palette, including its
+  status pills and field colours.
+- Long-press gestures survive normal thumb drift instead of being cancelled by
+  8 dp of movement.
+- Landscape uses a shorter keyboard so the bottom row stays on screen.
+- Backspace word-delete clears a selection safely and never corrupts a
+  selection-aware edit.
+- Emoji recents also record BMP emoji such as ❤️, ✨ and ☕.
+- Sound/haptic counters now reflect real system feedback instead of attempts.
+- The system dark/light change re-applies the palette immediately.
+
 ## Verification
 
 - 100 checks: the previous 99 automated checks plus the physical Moto G85 gate.
@@ -44,6 +57,8 @@ behaviour: System theme, mint accent, number row off, sound and haptics on.
   - S01 sound and haptics obey their toggles
 - The signed APK is built from the release variant; the debug receiver and
   self-test hooks are not present in the release.
+- This report is a full (non-skip-build) run: Gradle build, JVM tests and lint
+  actually executed.
 
 ## Compatibility
 
