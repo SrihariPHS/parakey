@@ -18,8 +18,8 @@ Every user request is mapped to the artifact that proves it. Check IDs come from
 | 11 | Swipe left on backspace deletes a word | `KeyboardView` backspace gesture, `ParakeyImeService.onDeleteWord` | K08 |
 | 12 | Recently used emoji move to the front | `SettingsStore.emojiRecents`, `KeyboardLayouts.emoji` | K17, JVM `recentEmojiMoveToTheFrontWithoutChangingPageSize` |
 | 13 | Works on Moto G85 and other Android 8.0+ arm64 phones | `minSdk 26`, arm64/x86_64 ABI split, compatibility doc | B03, B09–B11, `docs/COMPATIBILITY.md`; Moto R11 is **UNPROVEN in the current report** (pass was recorded in an earlier live phone run, not this run) |
-| 14 | 100-check live gate, ≥99/100 | `scripts/verify.py`, `scripts/gate.sh`, `gate-guards.py` | latest `verification/REPORT.md`: 99/100, every automated check passes, R11 pending |
-| 15 | Signed release on GitHub, no debug hooks | `app/build.gradle.kts`, debug-only manifest | v1.0.2 asset SHA-256 `5445d107…`, apksigner CN=Parakey, no DebugReceiver/SelfTestActivity, B14/P03 |
+| 14 | 100-check live gate, ≥99/100 | `scripts/verify.py`, `scripts/gate.sh`, `gate-guards.py` | latest `verification/REPORT.md`: 99/100, all 99 automated checks pass, R11 pending |
+| 15 | Signed release on GitHub, no debug hooks | `app/build.gradle.kts`, debug-only manifest | v1.0.2 asset SHA-256 `5445d107…`, apksigner CN=Parakey, no DebugReceiver/SelfTestActivity, B14/P03; tag `v1.0.2` = `10a161b` (later docs commit `8f60b5e` is on main but not in the tag) |
 | 16 | Phone coordinated with other agents, PIN never stored | session coordination, no PIN in repo | coordination messages sent to the MotoMirror thread; no PIN value appears in `git grep`; phone released |
 | 17 | Multiple agents used to audit the work | two completed audits (100-check suite, long-press/typing) plus five feature-design agents; two later auditors hit the provider usage limit | their findings are reflected in fixes and in this table; see the gap list below |
 
