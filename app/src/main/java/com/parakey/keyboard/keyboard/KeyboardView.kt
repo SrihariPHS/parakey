@@ -340,7 +340,9 @@ class KeyboardView @JvmOverloads constructor(
         val gap = dimens.gap * density
         val top = dimens.topBar * density
         val bottomPad = 6f * density
-        return (top + 4f * density + spec.rows.size * row + (spec.rows.size - 1) * gap + bottomPad + bottomInset).toInt()
+        val content = (top + 4f * density + spec.rows.size * row + (spec.rows.size - 1) * gap + bottomPad + bottomInset).toInt()
+        val cap = (resources.displayMetrics.heightPixels * 0.56f).toInt()
+        return min(content, cap)
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
@@ -723,7 +725,7 @@ class KeyboardView @JvmOverloads constructor(
         val key = pressedKey ?: return
         val rect = pressedRect ?: return
         if (key.action != KeyAction.CHARACTER || key.special || page == KeyboardPage.EMOJI) return
-        if (rect.top < 56f * resources.displayMetrics.density) return
+        if (rect.top < (dimens.topBar + dimens.row) * resources.displayMetrics.density) return
         val density = resources.displayMetrics.density
         val radius = 8f * density
         val previewW = max(rect.width(), 42f * density)
@@ -1195,32 +1197,30 @@ class KeyboardView @JvmOverloads constructor(
     }
 
     private fun tapFeedback() {
-        if (hapticsEnabled) {
-            performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+        if (hapticsEnabled && performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)) {
             hapticEvents++
         }
         if (soundEnabled) playKeySound()
     }
 
     private fun longFeedback() {
-        if (hapticsEnabled) {
-            performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+        if (hapticsEnabled && performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)) {
             hapticEvents++
         }
         if (soundEnabled) playKeySound()
     }
 
     private fun tickFeedback() {
-        if (hapticsEnabled) {
-            performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+        if (hapticsEnabled && performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)) {
             hapticEvents++
         }
     }
 
     private fun playKeySound() {
         try {
-            context.getSystemService(AudioManager::class.java)
-                ?.playSoundEffect(AudioManager.FX_KEYPRESS_STANDARD, 0.65f)
+            val manager = context.getSystemService(AudioManager::class.java) ?: return
+            if (manager.getStreamVolume(AudioManager.STREAM_SYSTEM) <= 0) return
+            manager.playSoundEffect(AudioManager.FX_KEYPRESS_STANDARD, 0.65f)
             soundEvents++
         } catch (_: Throwable) {
             // Sound effects are best-effort; a silent device must never crash typing.
@@ -1489,8 +1489,11 @@ class KeyboardView @JvmOverloads constructor(
                     invalidate()
                     return true
                 }
-                if (hypot(travelX, travelY) > 8f * resources.displayMetrics.density) {
-                    cancelPendingLongPress()
+                if (longPressRunnable != null && alternatePopup == null && !cursorMode) {
+                    val current = hitTest(x, y)?.first
+                    if (current == null || current.stableId != pressedKey?.stableId) {
+                        cancelPendingLongPress()
+                    }
                 }
                 val ids = ArrayList<Int>()
                 if (pressedPointerId >= 0) ids.add(pressedPointerId)

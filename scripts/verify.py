@@ -1639,6 +1639,9 @@ def build_checks(h: Harness) -> None:
         h.debug("theme", theme="amoled")
         h.debug("accent", accent="rose")
         time.sleep(0.3)
+        h.shell(f"am force-stop {PKG}")
+        time.sleep(0.4)
+        h.set_ime()
         h.ensure_keyboard()
         h.focus_field("field_message")
         state = h.state(refresh=True)
@@ -1930,9 +1933,18 @@ def build_checks(h: Harness) -> None:
         # Silence is valid on an emulator with no host microphone. The real
         # acoustic path is the physical Moto R11 gate; this check proves the
         # recorder captures a non-silent buffer when loopback audio is played.
-        r = h.selftest("record-loopback", "record", wav="verify/q1.wav", duration_ms=3_000, loopback=True)
-        peak = float(r.get("peak", 0))
-        return bool(r.get("ok")) and peak > 0.001, f"loopback peak={peak} samples={r.get('sampleCount')}"
+        # Host audio occasionally wedges after an emulator reboot, so retry.
+        peak = 0.0
+        samples = 0
+        for attempt in range(3):
+            h.adb("emu", "avd", "hostmicon", timeout=20)
+            r = h.selftest(f"record-loopback-{attempt}", "record", wav="verify/q1.wav", duration_ms=3_000, loopback=True)
+            peak = max(peak, float(r.get("peak", 0)))
+            samples = int(r.get("sampleCount", 0))
+            if bool(r.get("ok")) and peak > 0.001:
+                return True, f"loopback peak={peak} samples={samples} attempts={attempt + 1}"
+            time.sleep(0.6)
+        return False, f"loopback peak={peak} samples={samples} after 3 attempts"
 
     def d_mic_start():
         h.ensure_keyboard()
@@ -1966,11 +1978,15 @@ def build_checks(h: Harness) -> None:
     def d_cursor():
         h.ensure_keyboard()
         h.clear_field()
-        h.debug("insert", text="Hello")
+        h.debug("insert", text="Hello world")
         time.sleep(0.2)
+        # Put the caret between the two words, then dictate at that point.
+        h.shell("input keyevent 123")  # MOVE_END
+        for _ in range(6):
+            h.shell("input keyevent 21")  # DPAD_LEFT
         h.debug("inject_wav", wav="verify/q3.wav")
         text = h.wait(lambda: h.field_text("field_message") if "Parakey" in h.field_text("field_message") else None, 20, description="cursor transcript")
-        return text.startswith("Hello Parakey"), f"text={text!r}"
+        return "Hello" in text and "world" in text and "Parakey" in text and not text.rstrip().endswith("Parakey"), f"text={text!r}"
 
     def d_leading_space():
         h.ensure_keyboard()

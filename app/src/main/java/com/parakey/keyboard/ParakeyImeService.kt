@@ -9,6 +9,7 @@ import android.content.pm.PackageManager
 import android.inputmethodservice.InputMethodService
 import android.media.AudioAttributes
 import android.media.AudioFocusRequest
+import android.content.res.Configuration
 import android.media.AudioManager
 import android.os.Build
 import android.os.Handler
@@ -21,6 +22,7 @@ import android.view.WindowInsets
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
 import android.widget.Toast
+import com.parakey.keyboard.keyboard.KeyboardDimens
 import com.parakey.keyboard.keyboard.KeyboardPage
 import com.parakey.keyboard.keyboard.KeyboardTheme
 import com.parakey.keyboard.keyboard.KeyboardView
@@ -136,6 +138,11 @@ class ParakeyImeService : InputMethodService(), KeyboardView.Listener {
         super.onFinishInputView(finishingInput)
     }
 
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        applyAppearance()
+    }
+
     override fun onWindowHidden() {
         cancelDictation()
         super.onWindowHidden()
@@ -230,7 +237,7 @@ class ParakeyImeService : InputMethodService(), KeyboardView.Listener {
             }
         }
         ic?.commitText(text, 1)
-        if (text.codePoints().anyMatch { it >= 0x1F000 }) {
+        if (keyboardView.currentPage() == KeyboardPage.EMOJI || text.codePoints().anyMatch { it >= 0x1F000 }) {
             settings.addEmojiRecent(text)
             keyboardView.setEmojiRecents(settings.emojiRecents)
         }
@@ -249,6 +256,13 @@ class ParakeyImeService : InputMethodService(), KeyboardView.Listener {
     override fun onDeleteWord() {
         val ic = currentInputConnection ?: return
         hideUndo()
+        val selected = ic.getSelectedText(0)
+        if (!selected.isNullOrEmpty()) {
+            ic.commitText("", 1)
+            refreshShiftAfterEdit()
+            refreshSuggestions()
+            return
+        }
         val before = ic.getTextBeforeCursor(256, 0)?.toString().orEmpty()
         val match = Regex("[\\p{L}\\p{N}'’]+\\s*$").find(before)
         val count = match?.value?.length?.coerceAtLeast(1) ?: 1
@@ -759,6 +773,11 @@ class ParakeyImeService : InputMethodService(), KeyboardView.Listener {
     fun applyAppearance() {
         if (!::keyboardView.isInitialized) return
         keyboardView.setPalette(KeyboardTheme.palette(this, settings.theme, settings.accent))
+        val landscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+        keyboardView.setDimens(
+            if (landscape) KeyboardDimens(row = 40f, topBar = 40f, letterSize = 18f, specialSize = 11f)
+            else KeyboardDimens(),
+        )
         keyboardView.setNumberRow(settings.numberRowEnabled)
         keyboardView.setEmojiRecents(settings.emojiRecents)
         keyboardView.setFeedback(settings.hapticsEnabled, settings.soundEnabled)

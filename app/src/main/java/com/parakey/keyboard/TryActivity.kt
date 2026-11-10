@@ -18,6 +18,7 @@ import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
+import com.parakey.keyboard.keyboard.KeyboardTheme
 import com.parakey.keyboard.ui.colorWithAlpha
 import com.parakey.keyboard.ui.dp
 import com.parakey.keyboard.ui.roundedDrawable
@@ -55,32 +56,34 @@ class TryActivity : android.app.Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         settings = SettingsStore(this)
         night = when (settings.theme) {
-            "dark" -> true
+            "dark", "amoled" -> true
             "light" -> false
             else -> (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
                 Configuration.UI_MODE_NIGHT_YES
         }
         setTheme(if (night) R.style.Theme_Parakey_Dark else R.style.Theme_Parakey)
         super.onCreate(savedInstanceState)
+        val accent = KeyboardTheme.accentPalette(settings.accent, night)
+        val amoled = night && settings.theme == "amoled"
         colors = if (night) {
             Colors(
-                background = Color.rgb(15, 23, 42),
-                card = Color.rgb(30, 41, 59),
+                background = if (amoled) Color.BLACK else Color.rgb(15, 23, 42),
+                card = if (amoled) Color.rgb(10, 10, 10) else Color.rgb(30, 41, 59),
                 text = Color.rgb(241, 245, 249),
                 muted = Color.rgb(148, 163, 184),
-                border = Color.rgb(51, 65, 85),
-                accent = Color.rgb(45, 212, 191),
-                onAccent = Color.rgb(4, 47, 46),
+                border = if (amoled) Color.rgb(40, 40, 40) else Color.rgb(51, 65, 85),
+                accent = accent.color,
+                onAccent = accent.onColor,
             )
         } else {
             Colors(
                 background = Color.rgb(246, 248, 251),
                 card = Color.WHITE,
                 text = Color.rgb(15, 23, 42),
-                muted = Color.rgb(100, 116, 139),
+                muted = Color.rgb(91, 107, 128),
                 border = Color.rgb(226, 232, 240),
-                accent = Color.rgb(18, 184, 134),
-                onAccent = Color.WHITE,
+                accent = accent.color,
+                onAccent = accent.onColor,
             )
         }
         buildUi()
