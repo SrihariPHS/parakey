@@ -12,6 +12,30 @@ class SettingsStore(context: Context) {
             prefs.edit().putString("theme", value).apply()
         }
 
+    var accent: String
+        get() = prefs.getString("accent", "mint") ?: "mint"
+        set(value) {
+            prefs.edit().putString("accent", value).apply()
+        }
+
+    var numberRowEnabled: Boolean
+        get() = prefs.getBoolean("number_row", false)
+        set(value) {
+            prefs.edit().putBoolean("number_row", value).apply()
+        }
+
+    var hapticsEnabled: Boolean
+        get() = prefs.getBoolean("haptics", true)
+        set(value) {
+            prefs.edit().putBoolean("haptics", value).apply()
+        }
+
+    var soundEnabled: Boolean
+        get() = prefs.getBoolean("sound", true)
+        set(value) {
+            prefs.edit().putBoolean("sound", value).apply()
+        }
+
     var showLivePreview: Boolean
         get() = prefs.getBoolean("live_preview", false)
         set(value) {
@@ -84,5 +108,20 @@ class SettingsStore(context: Context) {
 
     fun clearClipboardHistory() {
         prefs.edit().remove("clipboard_history").apply()
+    }
+
+    var emojiRecents: List<String>
+        get() = prefs.getString("emoji_recents", "")
+            .orEmpty()
+            .split(listSeparator)
+            .filter { it.isNotBlank() }
+        set(value) {
+            prefs.edit().putString("emoji_recents", value.take(8).joinToString(listSeparator)).apply()
+        }
+
+    fun addEmojiRecent(emoji: String) {
+        val clean = emoji.trim()
+        if (clean.isEmpty()) return
+        emojiRecents = listOf(clean) + emojiRecents.filter { it != clean }
     }
 }

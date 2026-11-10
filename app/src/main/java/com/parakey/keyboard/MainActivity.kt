@@ -28,6 +28,7 @@ import android.widget.ScrollView
 import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toast
+import com.parakey.keyboard.keyboard.KeyboardTheme
 import com.parakey.keyboard.ui.colorWithAlpha
 import com.parakey.keyboard.ui.dp
 import com.parakey.keyboard.ui.roundedDrawable
@@ -78,14 +79,14 @@ class MainActivity : android.app.Activity() {
         settings = SettingsStore(this)
         intent?.getStringExtra("theme")?.let { settings.theme = it }
         night = when (settings.theme) {
-            "dark" -> true
+            "dark", "amoled" -> true
             "light" -> false
             else -> (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
                 Configuration.UI_MODE_NIGHT_YES
         }
         setTheme(if (night) R.style.Theme_Parakey_Dark else R.style.Theme_Parakey)
         super.onCreate(savedInstanceState)
-        colors = appColors(night)
+        colors = appColors(night, settings.accent)
         repository = ModelRepository(this)
         downloader = ModelDownloader(this)
         buildUi()
@@ -100,8 +101,10 @@ class MainActivity : android.app.Activity() {
         super.onNewIntent(intent)
         setIntent(intent)
         val next = intent?.getStringExtra("theme") ?: return
-        if (settings.theme != next) {
+        val nextAccent = intent?.getStringExtra("accent") ?: settings.accent
+        if (settings.theme != next || settings.accent != nextAccent) {
             settings.theme = next
+            settings.accent = nextAccent
             recreate()
         }
     }
@@ -134,34 +137,38 @@ class MainActivity : android.app.Activity() {
         window.navigationBarColor = Color.TRANSPARENT
     }
 
-    private fun appColors(dark: Boolean) = if (dark) {
-        AppColors(
-            background = Color.rgb(15, 23, 42),
-            card = Color.rgb(30, 41, 59),
-            text = Color.rgb(241, 245, 249),
-            muted = Color.rgb(148, 163, 184),
-            border = Color.rgb(51, 65, 85),
-            accent = Color.rgb(45, 212, 191),
-            onAccent = Color.rgb(4, 47, 46),
-            danger = Color.rgb(251, 113, 133),
-            warning = Color.rgb(251, 191, 36),
-            headerStart = Color.rgb(8, 16, 30),
-            headerEnd = Color.rgb(15, 118, 110),
-        )
-    } else {
-        AppColors(
-            background = Color.rgb(246, 248, 251),
-            card = Color.WHITE,
-            text = Color.rgb(15, 23, 42),
-            muted = Color.rgb(100, 116, 139),
-            border = Color.rgb(226, 232, 240),
-            accent = Color.rgb(18, 184, 134),
-            onAccent = Color.WHITE,
-            danger = Color.rgb(225, 29, 72),
-            warning = Color.rgb(217, 119, 6),
-            headerStart = Color.rgb(11, 18, 32),
-            headerEnd = Color.rgb(15, 118, 110),
-        )
+    private fun appColors(dark: Boolean, accentName: String = "mint"): AppColors {
+        val accent = KeyboardTheme.accentPalette(accentName, dark)
+        val amoled = dark && settings.theme == "amoled"
+        return if (dark) {
+            AppColors(
+                background = if (amoled) Color.BLACK else Color.rgb(15, 23, 42),
+                card = if (amoled) Color.rgb(10, 10, 10) else Color.rgb(30, 41, 59),
+                text = Color.rgb(241, 245, 249),
+                muted = Color.rgb(148, 163, 184),
+                border = if (amoled) Color.rgb(40, 40, 40) else Color.rgb(51, 65, 85),
+                accent = accent.color,
+                onAccent = accent.onColor,
+                danger = Color.rgb(251, 113, 133),
+                warning = Color.rgb(251, 191, 36),
+                headerStart = if (amoled) Color.BLACK else Color.rgb(8, 16, 30),
+                headerEnd = accent.pressed,
+            )
+        } else {
+            AppColors(
+                background = Color.rgb(246, 248, 251),
+                card = Color.WHITE,
+                text = Color.rgb(15, 23, 42),
+                muted = Color.rgb(100, 116, 139),
+                border = Color.rgb(226, 232, 240),
+                accent = accent.color,
+                onAccent = accent.onColor,
+                danger = Color.rgb(225, 29, 72),
+                warning = Color.rgb(146, 64, 14),
+                headerStart = Color.rgb(11, 18, 32),
+                headerEnd = accent.pressed,
+            )
+        }
     }
 
     private fun buildUi() {
@@ -303,7 +310,7 @@ class MainActivity : android.app.Activity() {
         return appText(text, 9.5f, textColor, bold = true).apply {
             letterSpacing = 0.08f
             setPadding(dp(10), dp(5), dp(10), dp(5))
-            setRoundedBackground(colorWithAlpha(bg, 70), 50f)
+            setRoundedBackground(bg, 50f)
         }
     }
 
@@ -426,7 +433,7 @@ class MainActivity : android.app.Activity() {
             gravity = Gravity.CENTER_VERTICAL
         }
         row.addView(appText("Try the keyboard", 16f, colors.text, bold = true), LinearLayout.LayoutParams(0, -2, 1f))
-        row.addView(badge("LIVE", colors.accent, colors.accent))
+        row.addView(badge("LIVE", colors.onAccent, colors.accent))
         card.addView(row)
         card.addView(appText(
             "Tap the field, then tap the mint mic on the keyboard and speak.",
@@ -525,6 +532,35 @@ class MainActivity : android.app.Activity() {
             "Capitalize the first letter of a sentence",
             settings.autoCapitalizeEnabled,
         ) { settings.autoCapitalizeEnabled = it })
+        card.addView(toggleRow(
+            "Number row",
+            "Always show 1–0 above the letters",
+            settings.numberRowEnabled,
+        ) {
+            settings.numberRowEnabled = it
+            ParakeyImeService.instance?.applyAppearance()
+        })
+        card.addView(toggleRow(
+            "Haptic feedback",
+            "A short vibration on every key",
+            settings.hapticsEnabled,
+        ) {
+            settings.hapticsEnabled = it
+            ParakeyImeService.instance?.applyAppearance()
+        })
+        card.addView(toggleRow(
+            "Key sounds",
+            "Play the system keyboard click",
+            settings.soundEnabled,
+        ) {
+            settings.soundEnabled = it
+            ParakeyImeService.instance?.applyAppearance()
+        })
+        card.addView(appText(
+            "Tip: long-press a letter for accents, or hold space and slide to move the cursor.",
+            10.5f,
+            colors.muted,
+        ).apply { setPadding(0, dp(10), 0, 0) })
 
         val personalRow = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -578,14 +614,21 @@ class MainActivity : android.app.Activity() {
         card.addView(appText("The keyboard follows this setting.", 12f, colors.muted).apply {
             setPadding(0, dp(4), 0, dp(11))
         })
+        val modes = listOf(
+            "system" to "System",
+            "light" to "Light",
+            "dark" to "Dark",
+            "amoled" to "AMOLED",
+        )
         val row = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
         }
-        for ((value, label) in listOf("system" to "System", "light" to "Light", "dark" to "Dark")) {
+        for ((index, mode) in modes.withIndex()) {
+            val (value, label) = mode
             val selected = settings.theme == value
-            val button = appText(label, 12f, if (selected) colors.onAccent else colors.muted, bold = true).apply {
+            val button = appText(label, 11.5f, if (selected) colors.onAccent else colors.muted, bold = true).apply {
                 gravity = Gravity.CENTER
-                setPadding(dp(10), dp(9), dp(10), dp(9))
+                setPadding(dp(4), dp(9), dp(4), dp(9))
                 setRoundedBackground(
                     if (selected) colors.accent else colors.background,
                     11f,
@@ -594,15 +637,77 @@ class MainActivity : android.app.Activity() {
                     strokeWidthDp = 1f,
                 )
                 setOnClickListener {
-                    settings.theme = value
-                    recreate()
+                    if (settings.theme != value) {
+                        settings.theme = value
+                        ParakeyImeService.instance?.applyAppearance()
+                        recreate()
+                    }
                 }
             }
             row.addView(button, LinearLayout.LayoutParams(0, -2, 1f).apply {
-                marginEnd = if (value != "dark") dp(6) else 0
+                marginEnd = if (index != modes.lastIndex) dp(5) else 0
             })
         }
         card.addView(row)
+
+        card.addView(appText("Accent colour", 11.5f, colors.muted, bold = true).apply {
+            setPadding(0, dp(14), 0, dp(7))
+        })
+        val accents = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+        }
+        for ((index, name) in KeyboardTheme.accents.withIndex()) {
+            val accent = KeyboardTheme.accentPalette(name, night)
+            val selected = settings.accent == name
+            val swatch = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                gravity = Gravity.CENTER
+                setPadding(dp(2), dp(7), dp(2), dp(7))
+                setRoundedBackground(
+                    if (selected) colorWithAlpha(accent.color, 30) else Color.TRANSPARENT,
+                    12f,
+                    strokeColor = if (selected) accent.color else Color.TRANSPARENT,
+                    strokeWidthDp = 1.5f,
+                )
+                setOnClickListener {
+                    if (settings.accent != name) {
+                        settings.accent = name
+                        ParakeyImeService.instance?.applyAppearance()
+                        recreate()
+                    }
+                }
+            }
+            val dot = View(this).apply {
+                background = roundedDrawable(this@MainActivity, accent.color, 20f)
+            }
+            swatch.addView(dot, LinearLayout.LayoutParams(dp(22), dp(22)).apply {
+                gravity = Gravity.CENTER_HORIZONTAL
+            })
+            swatch.addView(appText(name.replaceFirstChar { it.uppercase() }, 9.5f, if (selected) colors.text else colors.muted).apply {
+                gravity = Gravity.CENTER
+                setPadding(0, dp(4), 0, 0)
+            })
+            accents.addView(swatch, LinearLayout.LayoutParams(0, -2, 1f).apply {
+                marginEnd = if (index != KeyboardTheme.accents.lastIndex) dp(3) else 0
+            })
+        }
+        card.addView(accents)
+
+        // Small live preview of the keyboard palette.
+        val preview = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setPadding(0, dp(12), 0, 0)
+        }
+        val previewPalette = KeyboardTheme.palette(this, settings.theme, settings.accent)
+        for ((index, color) in listOf(previewPalette.key, previewPalette.special, previewPalette.accent).withIndex()) {
+            val chip = View(this).apply {
+                background = roundedDrawable(this@MainActivity, color, 9f)
+            }
+            preview.addView(chip, LinearLayout.LayoutParams(0, dp(30), 1f).apply {
+                marginEnd = if (index != 2) dp(5) else 0
+            })
+        }
+        card.addView(preview)
         return card
     }
 

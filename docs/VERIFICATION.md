@@ -23,15 +23,34 @@ The suite also checks:
 - **Raw hitbox corners**: every corner and the center of six keys, with
   autocorrect and suggestions disabled, must produce exactly the intended
   character. This prevents autocorrect from hiding a broken hitbox.
-- **Dictionary**: sixteen seeded misspellings (including contractions such as
-  `mightve → might've` and `liek → like`), twelve valid words/emails/URLs that
-  must be left alone, the UI flow `teh ` → `the ` and `mightve ` →
-  `might've `, double-space → period, and a negative control with autocorrect
-  disabled.
+- **Dictionary**: seeded misspellings (including contractions such as
+  `mightve → might've` and `liek → like`), valid words/emails/URLs that must be
+  left alone, the UI flow `teh ` → `the ` and `mightve ` → `might've `,
+  double-space → period, and a negative control with autocorrect disabled.
 - **Suggestions**: type `hel`, confirm relevant prefix suggestions, tap a chip
   off-center, and require the committed text to match the chip plus one space.
 - **Hitbox tiling**: key gaps and side margins resolve to the intended key rather
   than dead strips.
+- **Themes**: all 20 mode/accent combinations are read from the live IME state
+  and checked against WCAG contrast targets for body text, secondary text,
+  accent labels, suggestion text and accent-on-background. Theme and accent are
+  then persisted across a full IME relaunch.
+- **Backspace gestures**: a 400 ms hold starts repeat deletion; a left swipe
+  deletes the whole previous word in one gesture.
+- **Emoji recents**: inserting 🚀 must add it to the persisted recents list and
+  put it in the first emoji cell on the next visit.
+- **Number row**: with the setting on, the keymap must gain exactly ten digits
+  and one row, stay inside the view, stay under 1500 px, and produce
+  `1234567890` from real corner and center taps. Turning it off restores the
+  four-row layout.
+- **Long-press popups**: a real 650 ms hold on `e` opens the popup; sliding to
+  the third cell and releasing inserts exactly `ê`; releasing outside cancels
+  without inserting the base key.
+- **Cursor gesture**: holding space enters cursor mode, sliding left three
+  steps moves the caret, and the following `q` lands in the middle of `abcd`
+  (`aqbcd`) with no inserted space.
+- **Sound and haptics**: counters must stay at zero with both toggles off and
+  become non-zero after a real key tap with both on.
 
 Run the same harness on a phone:
 

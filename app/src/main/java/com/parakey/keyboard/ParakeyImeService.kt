@@ -84,7 +84,7 @@ class ParakeyImeService : InputMethodService(), KeyboardView.Listener {
     override fun onCreateInputView(): View {
         keyboardView = KeyboardView(this)
         keyboardView.listener = this
-        keyboardView.setPalette(KeyboardTheme.palette(this, settings.theme))
+        applyAppearance()
         keyboardView.setOnApplyWindowInsetsListener { _, insets ->
             val bottom = if (Build.VERSION.SDK_INT >= 30) {
                 insets.getInsets(WindowInsets.Type.navigationBars()).bottom
@@ -101,6 +101,7 @@ class ParakeyImeService : InputMethodService(), KeyboardView.Listener {
     override fun onStartInputView(info: EditorInfo?, restarting: Boolean) {
         super.onStartInputView(info, restarting)
         if (!::keyboardView.isInitialized) return
+        applyAppearance()
         passwordField = info != null && isPasswordField(info)
         autoCorrectAllowed = info != null && allowsAutoCorrect(info)
         keyboardView.hideClipboardMode()
@@ -229,8 +230,38 @@ class ParakeyImeService : InputMethodService(), KeyboardView.Listener {
             }
         }
         ic?.commitText(text, 1)
+        if (text.codePoints().anyMatch { it >= 0x1F000 }) {
+            settings.addEmojiRecent(text)
+            keyboardView.setEmojiRecents(settings.emojiRecents)
+        }
         refreshShiftAfterEdit()
         refreshSuggestions()
+    }
+
+    override fun onAlternate(text: String) {
+        if (text.isEmpty()) return
+        hideUndo()
+        currentInputConnection?.commitText(text, 1)
+        refreshShiftAfterEdit()
+        refreshSuggestions()
+    }
+
+    override fun onDeleteWord() {
+        val ic = currentInputConnection ?: return
+        hideUndo()
+        val before = ic.getTextBeforeCursor(256, 0)?.toString().orEmpty()
+        val match = Regex("[\\p{L}\\p{N}'’]+\\s*$").find(before)
+        val count = match?.value?.length?.coerceAtLeast(1) ?: 1
+        ic.deleteSurroundingText(count, 0)
+        refreshShiftAfterEdit()
+        refreshSuggestions()
+    }
+
+    override fun onCursorMove(direction: Int) {
+        val ic = currentInputConnection ?: return
+        val keyCode = if (direction < 0) KeyEvent.KEYCODE_DPAD_LEFT else KeyEvent.KEYCODE_DPAD_RIGHT
+        ic.sendKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, keyCode))
+        ic.sendKeyEvent(KeyEvent(KeyEvent.ACTION_UP, keyCode))
     }
 
     override fun onBackspace() {
@@ -490,7 +521,11 @@ class ParakeyImeService : InputMethodService(), KeyboardView.Listener {
     private fun refreshShiftAfterEdit() {
         if (!::keyboardView.isInitialized) return
         if (!settings.autoCapitalizeEnabled) {
-            keyboardView.setShiftState(ShiftState.OFF)
+            // An explicit caps-lock is still the user's choice; only ordinary
+            // auto-shift is disabled by this setting.
+            if (keyboardView.shiftState() != ShiftState.CAPS) {
+                keyboardView.setShiftState(ShiftState.OFF)
+            }
             return
         }
         if (keyboardView.shiftState() == ShiftState.CAPS) return
@@ -721,6 +756,14 @@ class ParakeyImeService : InputMethodService(), KeyboardView.Listener {
         }
     }
 
+    fun applyAppearance() {
+        if (!::keyboardView.isInitialized) return
+        keyboardView.setPalette(KeyboardTheme.palette(this, settings.theme, settings.accent))
+        keyboardView.setNumberRow(settings.numberRowEnabled)
+        keyboardView.setEmojiRecents(settings.emojiRecents)
+        keyboardView.setFeedback(settings.hapticsEnabled, settings.soundEnabled)
+    }
+
     // ---- Debug hooks used by the verification harness (debug builds only expose the receiver). ----
 
     fun debugKeyMap(): String? = if (::keyboardView.isInitialized) keyboardView.debugKeyMap() else null
@@ -728,7 +771,27 @@ class ParakeyImeService : InputMethodService(), KeyboardView.Listener {
     fun debugState(): String? {
         if (!::keyboardView.isInitialized) return null
         val base = keyboardView.debugState().trimEnd('}')
-        return "$base,\"theme\":\"${settings.theme}\",\"modelReady\":${modelRepository.isInstalled()}," +
+        val palette = KeyboardTheme.palette(this, settings.theme, settings.accent)
+        val (hapticEvents, soundEvents) = keyboardView.feedbackCounters()
+        val paletteJson = listOf(
+            "background" to palette.background,
+            "key" to palette.key,
+            "text" to palette.text,
+            "hint" to palette.hint,
+            "accent" to palette.accent,
+            "onAccent" to palette.onAccent,
+            "suggestionBg" to palette.suggestionBg,
+            "suggestionText" to palette.suggestionText,
+            "border" to palette.border,
+        ).joinToString(",") { (name, color) ->
+            "\"$name\":\"#${String.format("%06X", 0xFFFFFF and color)}\""
+        }
+        return "$base,\"theme\":\"${settings.theme}\",\"accent\":\"${settings.accent}\"," +
+            "\"numberRow\":${settings.numberRowEnabled},\"haptics\":${settings.hapticsEnabled}," +
+            "\"emojiRecents\":[${settings.emojiRecents.joinToString(",") { "\"${it.replace("\"", "\\\"")}\"" }}]," +
+            "\"sound\":${settings.soundEnabled},\"hapticEvents\":$hapticEvents,\"soundEvents\":$soundEvents," +
+            "\"palette\":{$paletteJson}," +
+            "\"modelReady\":${modelRepository.isInstalled()}," +
             "\"passwordField\":$passwordField,\"transcribing\":$transcribing," +
             "\"autocorrect\":${settings.autocorrectEnabled},\"autoCorrectAllowed\":$autoCorrectAllowed," +
             "\"suggestions\":${settings.suggestionsEnabled}," +
@@ -785,7 +848,28 @@ class ParakeyImeService : InputMethodService(), KeyboardView.Listener {
 
     fun debugSetTheme(theme: String) {
         settings.theme = theme
-        if (::keyboardView.isInitialized) keyboardView.setPalette(KeyboardTheme.palette(this, theme))
+        applyAppearance()
+    }
+
+    fun debugSetAccent(accent: String) {
+        settings.accent = accent
+        applyAppearance()
+    }
+
+    fun debugSetNumberRow(enabled: Boolean) {
+        settings.numberRowEnabled = enabled
+        applyAppearance()
+    }
+
+    fun debugSetFeedback(haptics: Boolean, sound: Boolean) {
+        settings.hapticsEnabled = haptics
+        settings.soundEnabled = sound
+        applyAppearance()
+        if (::keyboardView.isInitialized) keyboardView.resetFeedbackCounters()
+    }
+
+    fun debugResetFeedback() {
+        if (::keyboardView.isInitialized) keyboardView.resetFeedbackCounters()
     }
 
     fun debugEditorText(): String? {

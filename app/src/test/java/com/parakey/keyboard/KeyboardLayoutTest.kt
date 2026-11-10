@@ -21,6 +21,19 @@ class KeyboardLayoutTest {
     }
 
     @Test
+    fun numberRowIsOptionalAndAddsOneDigitRow() {
+        val without = KeyboardLayouts.specFor(KeyboardPage.LETTERS)
+        val with = KeyboardLayouts.specFor(KeyboardPage.LETTERS, numberRow = true)
+        assertEquals(4, without.rows.size)
+        assertEquals(5, with.rows.size)
+        assertEquals(
+            listOf("1", "2", "3", "4", "5", "6", "7", "8", "9", "0"),
+            with.rows[0].keys.map { it.label },
+        )
+        assertEquals("q", with.rows[1].keys[0].label)
+    }
+
+    @Test
     fun bottomRowHasSpaceAndEnter() {
         val row = KeyboardLayouts.specFor(KeyboardPage.LETTERS).rows.last()
         assertTrue(row.keys.any { it.action == KeyAction.SPACE })
@@ -49,5 +62,15 @@ class KeyboardLayoutTest {
         assertEquals(4, spec.rows.size)
         assertEquals(8, spec.rows[0].keys.size)
         assertEquals(24, spec.rows.take(3).sumOf { it.keys.size })
+    }
+
+    @Test
+    fun recentEmojiMoveToTheFrontWithoutChangingPageSize() {
+        val plain = KeyboardLayouts.specFor(KeyboardPage.EMOJI)
+        val recent = KeyboardLayouts.specFor(KeyboardPage.EMOJI, emojiRecents = listOf("🚀"))
+        assertEquals(4, recent.rows.size)
+        assertEquals(24, recent.rows.take(3).sumOf { it.keys.size })
+        assertEquals("🚀", recent.rows[0].keys[0].label)
+        assertEquals(plain.rows[0].keys.size, recent.rows[0].keys.size)
     }
 }

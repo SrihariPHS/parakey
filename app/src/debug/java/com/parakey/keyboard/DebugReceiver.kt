@@ -46,6 +46,25 @@ class DebugReceiver : BroadcastReceiver() {
                     ParakeyImeService.instance?.debugSetTheme(intent.getStringExtra("theme") ?: "system")
                     ok("theme")
                 }
+                "accent" -> {
+                    ParakeyImeService.instance?.debugSetAccent(intent.getStringExtra("accent") ?: "mint")
+                    ok("accent")
+                }
+                "number_row" -> {
+                    ParakeyImeService.instance?.debugSetNumberRow(intent.getBooleanExtra("enabled", false))
+                    ok("number_row")
+                }
+                "feedback" -> {
+                    ParakeyImeService.instance?.debugSetFeedback(
+                        intent.getBooleanExtra("haptics", true),
+                        intent.getBooleanExtra("sound", true),
+                    )
+                    ok("feedback")
+                }
+                "reset_feedback" -> {
+                    ParakeyImeService.instance?.debugResetFeedback()
+                    ok("reset_feedback")
+                }
                 "model_sha" -> {
                     val repo = ModelRepository(context)
                     val model = repo.resolveModel() ?: throw IllegalStateException("model not installed")

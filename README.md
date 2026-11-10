@@ -30,8 +30,18 @@ keylogging, no overlays.
 - Dictation inserts at the cursor, adds at most one leading space, and offers an
   undo chip.
 - Password fields disable the microphone automatically.
-- Light/dark themes, haptics, key previews and a live voice panel with an
-  amplitude meter.
+- **Appearance:** System, Light, Dark and true-black AMOLED modes with five
+  accent palettes (mint, blue, violet, sunset, rose). Light accents are tuned
+  for WCAG contrast; the keyboard and setup screen share the same palette.
+- **Optional number row:** one toggle adds 1–0 above the letters without
+  changing the symbols or emoji pages. Off by default.
+- **Long-press gestures:** hold a letter for accents (é, ñ, ü …), hold
+  punctuation for alternatives, or hold space and slide to move the cursor.
+  Swipe left on backspace to delete a whole word. Recently used emoji move to
+  the front of the emoji page.
+- **Sound and haptics:** independent key-click and vibration toggles, both on
+  by default and skipped when you turn them off.
+- Key previews and a live voice panel with an amplitude meter.
 - A setup screen that enables the keyboard, downloads the model (126 MB) with a
   SHA-256 check, grants the microphone and opens a test pad.
 - A 100-check verification suite, including a physical Moto G85 acceptance gate.
@@ -92,11 +102,14 @@ python3 scripts/verify.py
 The suite builds, installs and drives the real keyboard on the connected device.
 It checks the build, IME registration, every key page, text insertion, password
 privacy, ASR accuracy against six known WAV fixtures, latency, warm starts,
-AudioRecord capture, rotation, themes, monkey taps and the setup flow. Every
-check writes evidence to `verification/report.json` and `verification/REPORT.md`.
+AudioRecord capture, rotation, all 20 theme/accent palettes, the optional
+number row, long-press popups, long-press-space cursor movement, sound/haptic
+toggles, monkey taps and the setup flow. Every check writes evidence to
+`verification/report.json` and `verification/REPORT.md`.
 
 - The committed report in [`verification/REPORT.md`](verification/REPORT.md)
-  is the latest live run. **99/100** is achievable on the emulator: the only
+  is the latest live run. Every user request is mapped to a check and an
+  implementation in [`docs/TRACEABILITY.md`](docs/TRACEABILITY.md). **99/100** is achievable on the emulator: the only
   missing point is the physical Moto G85 gate.
 - Typing is tested with seeded human profiles (precise/average/sloppy jitter,
   edge/gap taps, adjacent-key slips) plus a raw hitbox-corner gate, dictionary
@@ -113,7 +126,8 @@ harness is deterministic so the same lanes can be rerun by five parallel agents.
 
 ```
 app/src/main/java/com/parakey/keyboard/
-  MainActivity.kt            setup, model download, status, theme
+  MainActivity.kt            setup, model download, status, themes
+  keyboard/KeyboardTheme.kt  4 theme modes, 5 accents, contrast-safe palettes
   TryActivity.kt             test pad / contact form / password field
   ParakeyImeService.kt       InputMethodService, dictation state, undo
   keyboard/KeyboardView.kt   custom-drawn Gboard-style keyboard + voice panel

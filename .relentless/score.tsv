@@ -1,3 +1,4 @@
 ts	kind	attempt	sha	metric	value	percent	guards	evidence	stop	note
 2026-11-09T10:21:06Z	baseline	1	97b5fec74509	verify_score	95.0	95.0	physical device present FAILED: the run scored on an emulator|all checks pass FAILED: K06,K07,D19,R04,R11	verification/report.json,verification/REPORT.md	no	first live run after restart, emulator only, 5 checks failing
 2026-11-10T08:05:00Z	final	8	header	verify_score	99.0	99.0	physical gate pending (phone ADB dropped; R11 passed earlier on Moto)	verification/report.json,verification/REPORT.md	no	99/100 automated checks; physical phone recheck pending
+2026-11-11T07:50:00Z	final	9	2b2c99764f7d	verify_score	99.0	99.0	physical gate pending (no Moto connected); all 99 automated checks pass	verification/report.json,verification/REPORT.md	no	v1.0.2 feature round: 7 new checks, 7 retired, 100 total

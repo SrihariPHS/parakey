@@ -55,11 +55,15 @@ enum class ShiftState { OFF, ON, CAPS }
 
 object KeyboardLayouts {
 
-    fun specFor(page: KeyboardPage): KeyboardSpec = when (page) {
-        KeyboardPage.LETTERS -> letters()
+    fun specFor(
+        page: KeyboardPage,
+        numberRow: Boolean = false,
+        emojiRecents: List<String> = emptyList(),
+    ): KeyboardSpec = when (page) {
+        KeyboardPage.LETTERS -> letters(numberRow)
         KeyboardPage.SYMBOLS -> symbols()
         KeyboardPage.MORE_SYMBOLS -> moreSymbols()
-        KeyboardPage.EMOJI -> emoji()
+        KeyboardPage.EMOJI -> emoji(emojiRecents)
     }
 
     fun displayLabel(key: Key, page: KeyboardPage, shift: ShiftState): String {
@@ -72,40 +76,54 @@ object KeyboardLayouts {
     private fun char(c: String, weight: Float = 1f, special: Boolean = false): Key =
         Key(KeyAction.CHARACTER, output = c, label = c, weight = weight, special = special)
 
-    private fun letters() = KeyboardSpec(
-        listOf(
-            KeyRow(
-                listOf(
-                    char("q"), char("w"), char("e"), char("r"), char("t"),
-                    char("y"), char("u"), char("i"), char("o"), char("p"),
+    private fun letters(numberRow: Boolean): KeyboardSpec {
+        val rows = mutableListOf<KeyRow>()
+        if (numberRow) {
+            rows.add(
+                KeyRow(
+                    listOf(
+                        char("1"), char("2"), char("3"), char("4"), char("5"),
+                        char("6"), char("7"), char("8"), char("9"), char("0"),
+                    ),
+                ),
+            )
+        }
+        rows.addAll(
+            listOf(
+                KeyRow(
+                    listOf(
+                        char("q"), char("w"), char("e"), char("r"), char("t"),
+                        char("y"), char("u"), char("i"), char("o"), char("p"),
+                    ),
+                ),
+                KeyRow(
+                    listOf(
+                        char("a"), char("s"), char("d"), char("f"), char("g"),
+                        char("h"), char("j"), char("k"), char("l"),
+                    ),
+                    sideInset = 0.5f,
+                ),
+                KeyRow(
+                    listOf(
+                        Key(KeyAction.SHIFT, icon = KeyIcon.SHIFT, weight = 1.5f, special = true),
+                        char("z"), char("x"), char("c"), char("v"), char("b"), char("n"), char("m"),
+                        Key(KeyAction.BACKSPACE, icon = KeyIcon.BACKSPACE, weight = 1.5f, special = true),
+                    ),
+                ),
+                KeyRow(
+                    listOf(
+                        Key(KeyAction.SYMBOLS, label = "?123", weight = 1.35f, special = true),
+                        char(","),
+                        Key(KeyAction.EMOJI, icon = KeyIcon.EMOJI, weight = 0.85f),
+                        Key(KeyAction.SPACE, label = "space", weight = 4.0f),
+                        char("."),
+                        Key(KeyAction.ENTER, icon = KeyIcon.ENTER, weight = 1.35f, special = true, accent = true),
+                    ),
                 ),
             ),
-            KeyRow(
-                listOf(
-                    char("a"), char("s"), char("d"), char("f"), char("g"),
-                    char("h"), char("j"), char("k"), char("l"),
-                ),
-                sideInset = 0.5f,
-            ),
-            KeyRow(
-                listOf(
-                    Key(KeyAction.SHIFT, icon = KeyIcon.SHIFT, weight = 1.5f, special = true),
-                    char("z"), char("x"), char("c"), char("v"), char("b"), char("n"), char("m"),
-                    Key(KeyAction.BACKSPACE, icon = KeyIcon.BACKSPACE, weight = 1.5f, special = true),
-                ),
-            ),
-            KeyRow(
-                listOf(
-                    Key(KeyAction.SYMBOLS, label = "?123", weight = 1.35f, special = true),
-                    char(","),
-                    Key(KeyAction.EMOJI, icon = KeyIcon.EMOJI, weight = 0.85f),
-                    Key(KeyAction.SPACE, label = "space", weight = 4.0f),
-                    char("."),
-                    Key(KeyAction.ENTER, icon = KeyIcon.ENTER, weight = 1.35f, special = true, accent = true),
-                ),
-            ),
-        ),
-    )
+        )
+        return KeyboardSpec(rows)
+    }
 
     private fun symbols() = KeyboardSpec(
         listOf(
@@ -173,12 +191,13 @@ object KeyboardLayouts {
         ),
     )
 
-    private fun emoji(): KeyboardSpec {
-        val emojis = listOf(
+    private fun emoji(recents: List<String>): KeyboardSpec {
+        val defaults = listOf(
             "😀", "😂", "🥰", "😎", "🤔", "😭", "😡", "🎉",
             "👍", "👎", "❤️", "🔥", "✨", "🙏", "💯", "🚀",
             "☕", "🍕", "🌙", "☀️", "🎵", "📸", "✅", "❌",
         )
+        val emojis = (recents.take(8) + defaults).distinct().take(24)
         val rows = emojis.chunked(8).map { row ->
             KeyRow(row.map { char(it) })
         }

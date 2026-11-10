@@ -7,6 +7,7 @@ import android.graphics.Path
 import android.graphics.PointF
 import android.graphics.RectF
 import android.graphics.Typeface
+import android.media.AudioManager
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
@@ -46,6 +47,9 @@ class KeyboardView @JvmOverloads constructor(
         fun onClipboardItem(text: String)
         fun onClipboardClose()
         fun onSuggestion(text: String)
+        fun onAlternate(text: String)
+        fun onCursorMove(direction: Int)
+        fun onDeleteWord()
     }
 
     var listener: Listener? = null
@@ -69,6 +73,12 @@ class KeyboardView @JvmOverloads constructor(
     private var clipboardPreview = ""
     private var clipboardCanCopy = true
     private var suggestions: List<String> = emptyList()
+    private var numberRow = false
+    private var emojiRecents: List<String> = emptyList()
+    private var hapticsEnabled = true
+    private var soundEnabled = true
+    private var hapticEvents = 0
+    private var soundEvents = 0
     private val suggestionRects = mutableListOf<RectF>()
 
     private val amplitudes = FloatArray(28)
@@ -94,6 +104,18 @@ class KeyboardView @JvmOverloads constructor(
 
     private var pressedKey: Key? = null
     private var pressedRect: RectF? = null
+    private var longPressRunnable: Runnable? = null
+    private var alternatePopup: List<String>? = null
+    private var alternateSelected = -1
+    private var alternateKey: Key? = null
+    private val popupCells = mutableListOf<RectF>()
+    private val popupBounds = RectF()
+    private var cursorMode = false
+    private var cursorAnchorX = 0f
+    private var backspaceWordDeleted = false
+    private var pressStartedOnBackspace = false
+    private var lastDownX = 0f
+    private var lastDownY = 0f
     private var pressedTopBar: String? = null
     private var activePointerId = -1
     private var pressedPointerId = -1
@@ -128,6 +150,35 @@ class KeyboardView @JvmOverloads constructor(
         invalidate()
     }
 
+    fun setEmojiRecents(next: List<String>) {
+        if (emojiRecents == next) return
+        emojiRecents = next.take(8)
+        if (page == KeyboardPage.EMOJI) {
+            requestLayout()
+            invalidate()
+        }
+    }
+
+    fun setNumberRow(enabled: Boolean) {
+        if (numberRow == enabled) return
+        numberRow = enabled
+        clearModalGesture()
+        requestLayout()
+        invalidate()
+    }
+
+    fun setFeedback(haptics: Boolean, sound: Boolean) {
+        hapticsEnabled = haptics
+        soundEnabled = sound
+    }
+
+    fun resetFeedbackCounters() {
+        hapticEvents = 0
+        soundEvents = 0
+    }
+
+    fun feedbackCounters(): Pair<Int, Int> = hapticEvents to soundEvents
+
     fun setDimens(next: KeyboardDimens) {
         dimens = next
         requestLayout()
@@ -145,7 +196,9 @@ class KeyboardView @JvmOverloads constructor(
     fun setPage(next: KeyboardPage) {
         if (page == next) return
         page = next
+        clearModalGesture()
         pressedKey = null
+        secondaryPresses.clear()
         requestLayout()
         invalidate()
     }
@@ -281,7 +334,7 @@ class KeyboardView @JvmOverloads constructor(
     }
 
     private fun desiredHeight(width: Int): Int {
-        val spec = KeyboardLayouts.specFor(page)
+        val spec = KeyboardLayouts.specFor(page, numberRow, emojiRecents)
         val density = resources.displayMetrics.density
         val row = dimens.row * density
         val gap = dimens.gap * density
@@ -293,12 +346,18 @@ class KeyboardView @JvmOverloads constructor(
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
         layoutGeometry(w, h)
+        val options = alternatePopup
+        val key = alternateKey
+        if (options != null && key != null) {
+            val rect = keyById[key.stableId]
+            if (rect != null) layoutPopup(rect, options.size) else clearModalGesture()
+        }
     }
 
     private fun layoutGeometry(width: Int, height: Int) {
         if (width <= 0 || height <= 0) return
         val density = resources.displayMetrics.density
-        val spec = KeyboardLayouts.specFor(page)
+        val spec = KeyboardLayouts.specFor(page, numberRow, emojiRecents)
         val topBar = dimens.topBar * density
         val contentTop = topBar + 4f * density
         val gap = dimens.gap * density
@@ -464,7 +523,12 @@ class KeyboardView @JvmOverloads constructor(
             }
         }
 
-        drawKeyPreview(canvas)
+        if (alternatePopup != null) {
+            drawAlternatePopup(canvas)
+        } else {
+            drawKeyPreview(canvas)
+        }
+        if (cursorMode) drawCursorHint(canvas)
     }
 
     private fun drawTopBar(canvas: Canvas) {
@@ -958,6 +1022,276 @@ class KeyboardView @JvmOverloads constructor(
         return best
     }
 
+    private val alternatesByKey: Map<String, List<String>> = mapOf(
+        "a" to listOf("á", "à", "â", "ä", "ã", "å"),
+        "e" to listOf("é", "è", "ê", "ë", "ē"),
+        "i" to listOf("í", "ì", "î", "ï", "ī"),
+        "o" to listOf("ó", "ò", "ô", "ö", "õ", "ø"),
+        "u" to listOf("ú", "ù", "û", "ü", "ū"),
+        "c" to listOf("ç", "ć", "č"),
+        "n" to listOf("ñ", "ń"),
+        "s" to listOf("ß", "ś", "š"),
+        "y" to listOf("ý", "ÿ"),
+        "z" to listOf("ź", "ž", "ż"),
+        "l" to listOf("ł", "ĺ"),
+        "d" to listOf("ď", "đ"),
+        "t" to listOf("ť", "þ"),
+        "," to listOf(";", ":", "…"),
+        "." to listOf("!", "?", "…"),
+        "'" to listOf("’", "‘", "“", "”"),
+        "-" to listOf("–", "—", "·"),
+        "1" to listOf("!", "¡"),
+        "2" to listOf("@", "º"),
+        "3" to listOf("#", "£"),
+        "4" to listOf("$", "¢"),
+        "5" to listOf("%", "‰"),
+        "6" to listOf("^", "&"),
+        "7" to listOf("&", "¶"),
+        "8" to listOf("*", "•"),
+        "9" to listOf("(", "["),
+        "0" to listOf(")", "]"),
+    )
+
+    private fun alternatesFor(key: Key): List<String> {
+        if (key.action != KeyAction.CHARACTER || page == KeyboardPage.EMOJI) return emptyList()
+        val values = alternatesByKey[key.output] ?: return emptyList()
+        val upper = page == KeyboardPage.LETTERS && shift != ShiftState.OFF &&
+            key.output.length == 1 && key.output[0].isLetter()
+        return if (upper) values.map { if (it == "ß") "ẞ" else it.uppercase() } else values
+    }
+
+    private fun cancelPendingLongPress() {
+        longPressRunnable?.let { handler.removeCallbacks(it) }
+        longPressRunnable = null
+    }
+
+    private fun scheduleLongPress(key: Key, rect: RectF) {
+        cancelPendingLongPress()
+        val options = alternatesFor(key)
+        val runnable = when {
+            key.action == KeyAction.SPACE -> Runnable { beginCursorMode() }
+            options.isNotEmpty() -> Runnable { openAlternatePopup(key, rect, options) }
+            else -> null
+        } ?: return
+        longPressRunnable = runnable
+        handler.postDelayed(runnable, 400L)
+    }
+
+    private fun beginCursorMode() {
+        if (pressedKey?.action != KeyAction.SPACE || voiceMode) return
+        cursorMode = true
+        longPressFired = true
+        cursorAnchorX = lastDownX
+        longFeedback()
+        invalidate()
+    }
+
+    private fun openAlternatePopup(key: Key, rect: RectF, options: List<String>) {
+        if (pressedKey?.stableId != key.stableId || options.isEmpty()) return
+        alternateKey = key
+        alternatePopup = options
+        alternateSelected = -1
+        layoutPopup(rect, options.size)
+        longPressFired = true
+        longFeedback()
+        invalidate()
+    }
+
+    private fun layoutPopup(keyRect: RectF, count: Int) {
+        val density = resources.displayMetrics.density
+        val cellW = 34f * density
+        val cellH = 44f * density
+        val gap = 4f * density
+        val pad = 5f * density
+        val w = count * cellW + (count - 1) * gap + 2f * pad
+        val h = cellH + 2f * pad
+        val left = (keyRect.centerX() - w / 2f).coerceIn(8f * density, max(8f * density, width - w - 8f * density))
+        var top = keyRect.top - h - 6f * density
+        if (top < 2f * density) top = keyRect.bottom + 6f * density
+        top = top.coerceAtMost(max(2f * density, height - h - 2f * density))
+        popupBounds.set(left, top, left + w, top + h)
+        popupCells.clear()
+        for (i in 0 until count) {
+            val x = left + pad + i * (cellW + gap)
+            popupCells.add(RectF(x, top + pad, x + cellW, top + pad + cellH))
+        }
+    }
+
+    private fun updateAlternateSelection(x: Float, y: Float) {
+        if (popupCells.isEmpty()) return
+        if (y < popupBounds.top || y > popupBounds.bottom) {
+            setAlternateSelected(-1)
+            return
+        }
+        val density = resources.displayMetrics.density
+        var best = 0
+        var bestDistance = Float.MAX_VALUE
+        for (i in popupCells.indices) {
+            val cell = popupCells[i]
+            val distance = when {
+                x < cell.left -> cell.left - x
+                x > cell.right -> x - cell.right
+                else -> 0f
+            }
+            if (distance < bestDistance) {
+                bestDistance = distance
+                best = i
+            }
+        }
+        setAlternateSelected(if (bestDistance > 26f * density) -1 else best)
+    }
+
+    private fun setAlternateSelected(index: Int) {
+        if (alternateSelected == index) return
+        alternateSelected = index
+        if (index >= 0) tickFeedback()
+        invalidate()
+    }
+
+    private fun commitAlternate(x: Float, y: Float) {
+        val options = alternatePopup
+        val index = alternateSelected
+        val key = alternateKey
+        val anchor = pressedRect
+        if (options != null && index in options.indices) {
+            listener?.onAlternate(options[index])
+            if (shift == ShiftState.ON) {
+                shift = ShiftState.OFF
+            }
+        } else if (key != null && anchor != null && anchor.contains(x, y)) {
+            // A stationary long-press release on the key keeps the base character.
+            performKey(key)
+        }
+        pressedKey = null
+        pressedRect = null
+        pressedPointerId = -1
+        clearModalGesture()
+        invalidate()
+    }
+
+    private fun clearModalGesture() {
+        cancelPendingLongPress()
+        alternatePopup = null
+        alternateSelected = -1
+        alternateKey = null
+        popupCells.clear()
+        popupBounds.setEmpty()
+        cursorMode = false
+        backspaceWordDeleted = false
+        pressStartedOnBackspace = false
+        longPressFired = false
+    }
+
+    private fun handleCursorMove(x: Float) {
+        val step = 16f * resources.displayMetrics.density
+        var moved = false
+        while (abs(x - cursorAnchorX) >= step) {
+            val direction = if (x > cursorAnchorX) 1 else -1
+            listener?.onCursorMove(direction)
+            cursorAnchorX += direction * step
+            moved = true
+        }
+        if (moved) tickFeedback()
+    }
+
+    private fun tapFeedback() {
+        if (hapticsEnabled) {
+            performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+            hapticEvents++
+        }
+        if (soundEnabled) playKeySound()
+    }
+
+    private fun longFeedback() {
+        if (hapticsEnabled) {
+            performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+            hapticEvents++
+        }
+        if (soundEnabled) playKeySound()
+    }
+
+    private fun tickFeedback() {
+        if (hapticsEnabled) {
+            performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+            hapticEvents++
+        }
+    }
+
+    private fun playKeySound() {
+        try {
+            context.getSystemService(AudioManager::class.java)
+                ?.playSoundEffect(AudioManager.FX_KEYPRESS_STANDARD, 0.65f)
+            soundEvents++
+        } catch (_: Throwable) {
+            // Sound effects are best-effort; a silent device must never crash typing.
+        }
+    }
+
+    private fun drawAlternatePopup(canvas: Canvas) {
+        val options = alternatePopup ?: return
+        if (popupCells.isEmpty()) return
+        val density = resources.displayMetrics.density
+        val radius = 11f * density
+        paint.style = Paint.Style.FILL
+        paint.color = palette.shadow
+        canvas.drawRoundRect(
+            popupBounds.left,
+            popupBounds.top + 3f * density,
+            popupBounds.right,
+            popupBounds.bottom + 3f * density,
+            radius,
+            radius,
+            paint,
+        )
+        paint.color = palette.suggestionBg
+        canvas.drawRoundRect(popupBounds, radius, radius, paint)
+        paint.style = Paint.Style.STROKE
+        paint.strokeWidth = 1f * density
+        paint.color = palette.border
+        canvas.drawRoundRect(popupBounds, radius, radius, paint)
+        paint.style = Paint.Style.FILL
+        textPaint.textAlign = Paint.Align.CENTER
+        textPaint.textSize = 21f * density
+        textPaint.typeface = Typeface.create("sans-serif", Typeface.NORMAL)
+        textPaint.isFakeBoldText = false
+        for (i in popupCells.indices) {
+            val cell = popupCells[i]
+            if (i == alternateSelected) {
+                paint.color = palette.accent
+                canvas.drawRoundRect(cell, 8f * density, 8f * density, paint)
+            }
+            textPaint.color = if (i == alternateSelected) palette.onAccent else palette.text
+            val label = options.getOrElse(i) { "" }
+            canvas.drawText(
+                label,
+                cell.centerX(),
+                cell.centerY() - (textPaint.descent() + textPaint.ascent()) / 2f,
+                textPaint,
+            )
+        }
+    }
+
+    private fun drawCursorHint(canvas: Canvas) {
+        val spaceRect = keyRects.firstOrNull { it.first.action == KeyAction.SPACE }?.second ?: return
+        val density = resources.displayMetrics.density
+        val label = "←  slide to move cursor  →"
+        textPaint.textAlign = Paint.Align.CENTER
+        textPaint.textSize = 11f * density
+        textPaint.typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
+        textPaint.isFakeBoldText = false
+        val widthPx = textPaint.measureText(label) + 28f * density
+        val heightPx = 30f * density
+        val left = (spaceRect.centerX() - widthPx / 2f).coerceIn(8f * density, max(8f * density, width - widthPx - 8f * density))
+        var top = spaceRect.top - heightPx - 8f * density
+        if (top < 2f * density) top = spaceRect.bottom + 6f * density
+        val rect = RectF(left, top, left + widthPx, top + heightPx)
+        paint.style = Paint.Style.FILL
+        paint.color = palette.accent
+        canvas.drawRoundRect(rect, heightPx / 2f, heightPx / 2f, paint)
+        textPaint.color = palette.onAccent
+        canvas.drawText(label, rect.centerX(), rect.centerY() - (textPaint.descent() + textPaint.ascent()) / 2f, textPaint)
+    }
+
     override fun onTouchEvent(event: MotionEvent): Boolean {
         if (!isEnabled) return false
         val x = event.x
@@ -974,7 +1308,7 @@ class KeyboardView @JvmOverloads constructor(
                     val dy = y - voiceMicCenter.y
                     val radius = dimens.voiceMicRadius * resources.displayMetrics.density * 1.4f
                     if (hypot(dx, dy) <= radius) {
-                        performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                        tapFeedback()
                     }
                     return true
                 }
@@ -1002,7 +1336,7 @@ class KeyboardView @JvmOverloads constructor(
                 MotionEvent.ACTION_DOWN -> {
                     activePointerId = event.getPointerId(0)
                     if (clipboardRects.values.any { it.contains(x, y) }) {
-                        performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                        tapFeedback()
                     }
                     return true
                 }
@@ -1030,13 +1364,45 @@ class KeyboardView @JvmOverloads constructor(
             }
         }
 
+        if (alternatePopup != null || cursorMode) {
+            when (event.actionMasked) {
+                MotionEvent.ACTION_MOVE -> {
+                    if (cursorMode) handleCursorMove(x) else updateAlternateSelection(x, y)
+                    return true
+                }
+                MotionEvent.ACTION_UP -> {
+                    if (cursorMode) {
+                        clearModalGesture()
+                        pressedKey = null
+                        pressedRect = null
+                        pressedPointerId = -1
+                        invalidate()
+                    } else {
+                        commitAlternate(x, y)
+                    }
+                    activePointerId = -1
+                    return true
+                }
+                MotionEvent.ACTION_CANCEL -> {
+                    activePointerId = -1
+                    clearModalGesture()
+                    pressedKey = null
+                    pressedRect = null
+                    pressedPointerId = -1
+                    invalidate()
+                    return true
+                }
+                MotionEvent.ACTION_POINTER_DOWN, MotionEvent.ACTION_POINTER_UP -> return true
+            }
+        }
+
         if (event.actionMasked == MotionEvent.ACTION_POINTER_DOWN) {
             val index = event.actionIndex
             val id = event.getPointerId(index)
             val hit = hitTest(event.getX(index), event.getY(index))
             if (hit != null) {
                 secondaryPresses[id] = hit
-                performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                tapFeedback()
             }
             return true
         }
@@ -1058,11 +1424,15 @@ class KeyboardView @JvmOverloads constructor(
                 activePointerId = event.getPointerId(0)
                 pressedPointerId = event.getPointerId(0)
                 longPressFired = false
+                backspaceWordDeleted = false
+                pressStartedOnBackspace = false
+                lastDownX = x
+                lastDownY = y
                 val topTarget = topBarTarget(x, y)
                 when {
                     topTarget != null -> {
                         pressedTopBar = topTarget
-                        performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                        tapFeedback()
                     }
                     suggestionRects.indexOfFirst {
                         RectF(it).apply { inset(-4f * resources.displayMetrics.density, -4f * resources.displayMetrics.density) }.contains(x, y)
@@ -1073,27 +1443,30 @@ class KeyboardView @JvmOverloads constructor(
                         pressedTopBar = "suggestion"
                         pressedSuggestionText = suggestions.getOrNull(index)
                         pressedSuggestionRect = suggestionRects.getOrNull(index)
-                        performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                        tapFeedback()
                     }
                     undoAvailable && undoRect.contains(x, y) && suggestionRect.contains(x, y) -> {
                         pressedTopBar = "undo"
-                        performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                        tapFeedback()
                     }
                     else -> {
                         val hit = hitTest(x, y)
                         if (hit != null) {
                             pressedKey = hit.first
                             pressedRect = hit.second
-                            performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                            pressStartedOnBackspace = hit.first.action == KeyAction.BACKSPACE
+                            tapFeedback()
                             if (hit.first.action == KeyAction.BACKSPACE) {
                                 handler.postDelayed({
                                     if (pressedKey?.action == KeyAction.BACKSPACE) {
                                         longPressFired = true
-                                        performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+                                        longFeedback()
                                         listener?.onBackspace()
                                         handler.postDelayed(repeatRunnable, 260L)
                                     }
                                 }, 400L)
+                            } else {
+                                scheduleLongPress(hit.first, hit.second)
                             }
                             invalidate()
                         }
@@ -1102,6 +1475,23 @@ class KeyboardView @JvmOverloads constructor(
                 return true
             }
             MotionEvent.ACTION_MOVE -> {
+                val travelX = x - lastDownX
+                val travelY = y - lastDownY
+                if (!backspaceWordDeleted && pressStartedOnBackspace &&
+                    travelX < -56f * resources.displayMetrics.density &&
+                    abs(travelX) > 3f * abs(travelY)
+                ) {
+                    backspaceWordDeleted = true
+                    longPressFired = true
+                    handler.removeCallbacksAndMessages(null)
+                    longFeedback()
+                    listener?.onDeleteWord()
+                    invalidate()
+                    return true
+                }
+                if (hypot(travelX, travelY) > 8f * resources.displayMetrics.density) {
+                    cancelPendingLongPress()
+                }
                 val ids = ArrayList<Int>()
                 if (pressedPointerId >= 0) ids.add(pressedPointerId)
                 ids.addAll(secondaryPresses.keys)
@@ -1124,6 +1514,7 @@ class KeyboardView @JvmOverloads constructor(
             }
             MotionEvent.ACTION_UP -> {
                 activePointerId = -1
+                cancelPendingLongPress()
                 val id = event.getPointerId(0)
                 val secondary = secondaryPresses.remove(id)
                 if (secondary != null) {
@@ -1136,6 +1527,7 @@ class KeyboardView @JvmOverloads constructor(
             MotionEvent.ACTION_CANCEL -> {
                 activePointerId = -1
                 handler.removeCallbacksAndMessages(null)
+                clearModalGesture()
                 pressedKey = null
                 pressedRect = null
                 pressedTopBar = null
@@ -1152,6 +1544,15 @@ class KeyboardView @JvmOverloads constructor(
 
     private fun finishPress(x: Float, y: Float) {
         handler.removeCallbacksAndMessages(null)
+        cancelPendingLongPress()
+        if (alternatePopup != null || cursorMode) {
+            clearModalGesture()
+            pressedKey = null
+            pressedRect = null
+            pressedPointerId = -1
+            invalidate()
+            return
+        }
         val top = pressedTopBar
         pressedTopBar = null
         if (top != null) {
@@ -1290,16 +1691,38 @@ class KeyboardView @JvmOverloads constructor(
                 .append(key.action.name).append("\",\"x\":").append(rect.left.toInt())
                 .append(",\"y\":").append(rect.top.toInt())
                 .append(",\"w\":").append(rect.width().toInt())
-                .append(",\"h\":").append(rect.height().toInt()).append('}')
+                .append(",\"h\":").append(rect.height().toInt())
+                .append(",\"alternates\":[").append(alternatesFor(key).joinToString(",") { "\"${escape(it)}\"" }).append("]")
+                .append('}')
         }
-        sb.append("]}")
+        sb.append("]")
+        sb.append(",\"popup\":")
+        if (alternatePopup == null) {
+            sb.append("null")
+        } else {
+            sb.append("{\"selected\":").append(alternateSelected)
+            sb.append(",\"bounds\":").append(rectJson(popupBounds))
+            sb.append(",\"cells\":[")
+            for (i in popupCells.indices) {
+                if (i > 0) sb.append(',')
+                val label = alternatePopup?.getOrElse(i) { "" } ?: ""
+                sb.append("{\"label\":\"").append(escape(label)).append("\",")
+                sb.append(rectJson(popupCells[i]).trimStart('{'))
+            }
+            sb.append("]}")
+        }
+        sb.append('}')
         return sb.toString()
     }
 
     fun debugState(): String {
         return "{\"voiceMode\":$voiceMode,\"recording\":$recording,\"processing\":$processing," +
             "\"clipboardMode\":$clipboardMode,\"suggestions\":${suggestions.size},\"micEnabled\":$micEnabled,\"page\":\"${page.name}\",\"shift\":\"${shift.name}\"," +
-            "\"width\":$width,\"height\":$height,\"bottomInset\":$bottomInset,\"status\":\"${escape(statusText)}\"}"
+            "\"width\":$width,\"height\":$height,\"bottomInset\":$bottomInset,\"numberRow\":$numberRow," +
+            "\"alternatePopup\":${alternatePopup != null},\"alternateSelected\":$alternateSelected,\"cursorMode\":$cursorMode," +
+            "\"viewAccent\":\"#${String.format("%06X", 0xFFFFFF and palette.accent)}\"," +
+            "\"viewBackground\":\"#${String.format("%06X", 0xFFFFFF and palette.background)}\"," +
+            "\"viewNumberRow\":$numberRow,\"status\":\"${escape(statusText)}\"}"
     }
 
     fun keyRectFor(label: String): RectF? {
