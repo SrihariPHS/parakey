@@ -2,12 +2,12 @@
 
 **Score: 99/100** (99/100 checks, threshold 99)
 
-- Generated: 2026-11-11T11:09:29+00:00
+- Generated: 2026-11-11T18:03:34+00:00
 - Device: sdk_gphone64_arm64 · Android 15 · arm64-v8a (emulator)
 - Serial: `redacted`
-- APK: `ef68ec56b9dba6fd…`
+- APK: `eb3b76346f243b0f…`
 - Model: `9177a9146cf32ee0…`
-- Duration: 490s
+- Duration: 497s
 
 > The physical Moto G85 gate is pending. This run scores 99/100 on the
 > emulator. Connect the phone and rerun to reach 100/100.
@@ -20,14 +20,14 @@
 | B04 | Build | Debug APK compiles | PASS | gradlew :app:assembleDebug |
 | B05 | Build | JVM unit tests pass | PASS | gradlew :app:testDebugUnitTest |
 | B06 | Build | Android lint passes | PASS | gradlew :app:lintDebug |
-| B07 | Build | Debug APK exists | PASS | /Users/srihari/workspace/parakey/app/build/outputs/apk/debug/app-debug.apk (28626151 bytes) |
-| B08 | Build | APK is under 40 MB (model not bundled) | PASS | 27.3 MB |
+| B07 | Build | Debug APK exists | PASS | /Users/srihari/workspace/parakey/app/build/outputs/apk/debug/app-debug.apk (28549905 bytes) |
+| B08 | Build | APK is under 40 MB (model not bundled) | PASS | 27.2 MB |
 | B09 | Build | APK contains arm64-v8a sherpa JNI | PASS | arm64-v8a sherpa JNI |
 | B10 | Build | APK contains x86_64 sherpa JNI | PASS | x86_64 sherpa JNI |
 | B11 | Build | APK contains ONNX Runtime | PASS | onnxruntime native library |
 | B12 | Build | IME service and method metadata are packaged | PASS | IME service + method metadata + BIND_INPUT_METHOD |
 | B13 | Build | Microphone and internet permissions are packaged | PASS | RECORD_AUDIO + INTERNET |
-| B14 | Build | Package id and version are correct | PASS | package com.parakey.keyboard version 1.1.1 |
+| B14 | Build | Package id and version are correct | PASS | package com.parakey.keyboard version 1.1.2 |
 | B15 | Build | Model weights are not committed | PASS | weight files in repo=0, ignored=True |
 | B16 | Build | License and model attribution exist | PASS | LICENSE + Parakeet CC-BY-4.0 notice |
 | B17 | Build | README documents setup and verification | PASS | README covers installation, Moto G85 and verification |
@@ -40,15 +40,15 @@
 | P07 | Privacy | Model URL is HTTPS | PASS | MODEL_URL=https://huggingface.co/VocaHQ/sherpa-onnx-nemo-parakeet-tdt-ctc-110m-en-int8/res |
 | P08 | Privacy | Dictation path makes no network calls | PASS | network references in dictation path=[] |
 | I01 | IME | ADB device is online | PASS | state=device model=sdk_gphone64_arm64 |
-| I02 | IME | Debug APK is installed | PASS | package:/data/app/~~YdPOGwNoMm7rD-SzSP9trA==/com.parakey.keyboard-6hRmyhCct7RSTfNxLNigrQ==/base.apk |
-| I03 | IME | Setup activity launches | PASS | topResumedActivity=ActivityRecord{c5e17c6 u0 com.parakey.keyboard/.MainActivity t1300} |
+| I02 | IME | Debug APK is installed | PASS | package:/data/app/~~c5GyVwWbJPTk9R5pTtalfQ==/com.parakey.keyboard-4iaUGqxpjyxmP-EawL4Aow==/base.apk |
+| I03 | IME | Setup activity launches | PASS | topResumedActivity=ActivityRecord{68982ec u0 com.parakey.keyboard/.MainActivity t1309} |
 | I04 | IME | Setup header renders | PASS | setup header renders |
 | I05 | IME | Speech model is ready on device | PASS | modelReady=True |
 | I06 | IME | Parakey IME is listed | PASS | Parakey IME is listed |
 | I07 | IME | Parakey IME is enabled | PASS | Parakey IME is enabled |
 | I08 | IME | Parakey IME is selected | PASS | default_input_method=com.parakey.keyboard/.ParakeyImeService |
 | I09 | IME | IME service is running | PASS | service state={'voiceMode': False, 'recording': False, 'processing': False, 'clipboardMode': False, 'suggestions': True, 'micEnabled': True, 'page': 'LETTERS', 'shift': 'ON', 'width': 1080, 'height': 819, 'bottomInset': 63, 'numberRow': False, 'alternatePopup': False, 'alternateSelected': -1, 'curso |
-| I10 | IME | Test pad launches | PASS | topResumedActivity=ActivityRecord{967fa80 u0 com.parakey.keyboard/.TryActivity t1301} |
+| I10 | IME | Test pad launches | PASS | topResumedActivity=ActivityRecord{18ee2aa u0 com.parakey.keyboard/.TryActivity t1310} |
 | I11 | IME | Message field is focused | PASS | focused=true |
 | I12 | IME | Software keyboard is shown | PASS | shown=True |
 | I13 | IME | Keyboard height is sane | PASS | keyboard height=819px |
@@ -75,7 +75,7 @@
 | N03 | Number row | PIN fields get a 3x4 numeric pad | PASS | page=NUMBER numericOnly=True mic=False suggestions=False labels=['1', '2', '3', '4', '5', '6', '7', '8', '9'] text='1234' letters=False |
 | T01 | Themes | All 20 theme/accent palettes meet contrast targets | PASS | 100 contrast pairs checked; failures=[] |
 | T02 | Themes | Theme and accent survive an IME relaunch | PASS | theme=amoled accent=rose bg=#000000 accentHex=#FB7185 |
-| N01 | Number row | Number row adds one fitted row and height stays sane | PASS | keys 34->44 digits=10 height=819->919 delta=100 rows=5 bad=0 |
+| N01 | Number row | Number row is 20% shorter and still fits | PASS | keys 34->44 digits=10 height=819->943 delta=124 rows=5 bad=0 |
 | N02 | Number row | Digits 1-0 insert from corner and center taps | PASS | expected='1234567890' observed='1234567890' |
 | A01 | Gestures | Long-press popup opens, selects and cancels | PASS | popup=True selected=2 text='ê' base='e' cancelled='' |
 | A02 | Gestures | Long-press space moves the cursor without a space | PASS | cursorMode=True before='abcd' after='aqbcd' step=126px |
@@ -90,12 +90,12 @@
 | D08 | ASR | Fixture q4 transcription | PASS | WER=0.000 text='Hello world. This is a test of the speech recognition model' |
 | D09 | ASR | Fixture q5 transcription | PASS | WER=0.000 text='I would like a large coffee with oat milk. please' |
 | D10 | ASR | Long audio transcription | PASS | WER=0.019 audioMs=17795 |
-| D11 | ASR | q1 real-time factor | PASS | RTF=0.07291666666666667 |
-| D12 | ASR | q3 real-time factor | PASS | RTF=0.023116671199347294 |
-| D13 | ASR | Long audio real-time factor | PASS | RTF=0.022646810901938746 |
-| D14 | ASR | q3 latency | PASS | elapsedMs=85 |
+| D11 | ASR | q1 real-time factor | PASS | RTF=0.07892628205128205 |
+| D12 | ASR | q3 real-time factor | PASS | RTF=0.05303236333967909 |
+| D13 | ASR | Long audio real-time factor | PASS | RTF=0.019837032874402923 |
+| D14 | ASR | q3 latency | PASS | elapsedMs=195 |
 | D16 | ASR | Empty audio is handled | PASS | {'ok': True, 'text': '', 'elapsedMs': 0, 'audioMs': 0, 'mode': 'empty'} |
-| D17 | ASR | Very short audio is handled | PASS | {'ok': True, 'text': '', 'elapsedMs': 18, 'audioMs': 100, 'mode': 'short'} |
+| D17 | ASR | Very short audio is handled | PASS | {'ok': True, 'text': '', 'elapsedMs': 17, 'audioMs': 100, 'mode': 'short'} |
 | D18 | ASR | AudioRecord captures 16 kHz samples | PASS | sampleCount=48000 |
 | D19 | ASR | AudioRecord captures non-silence | PASS | loopback peak=1.0 samples=48000 attempts=1 |
 | D20 | ASR | Mic key starts recording | PASS | voiceMode=True recording=True |
@@ -110,7 +110,7 @@
 | R04 | Real life | Clear-all button clears the form | PASS | before=['TestName', 'test@example.com', 'Hello'] after=['', '', '', ''] |
 | R06 | Real life | Clipboard copy and paste work | PASS | first='FIRST_CLIP' second='COPY_SELECTION' |
 | R07 | Real life | Setup status shows ready and selected | PASS | setup shows model READY and keyboard ENABLED/SELECTED |
-| R09 | Real life | Random-tap monkey run is crash-free | PASS | pid=31290 crash=False |
+| R09 | Real life | Random-tap monkey run is crash-free | PASS | pid=15671 crash=False |
 | R10 | Real life | Relaunch keeps IME and model ready | PASS | default=com.parakey.keyboard/.ParakeyImeService modelReady=True shown=True |
 | R12 | Real life | Zero app crashes in the full suite | PASS | no FATAL EXCEPTION from com.parakey.keyboard |
 | R11 | Physical | Moto G85 speaker-loopback mic gate | FAIL | PENDING: no physical phone. Connect the Moto G85 with USB debugging (or wireless ADB) and rerun scripts/verify.py. |
@@ -128,6 +128,7 @@
 - `verification/artifacts/keyboard.png`
 - `verification/artifacts/light-theme.png`
 - `verification/artifacts/number-pad.png`
+- `verification/artifacts/number-strip-20.png`
 - `verification/artifacts/number-strip.png`
 - `verification/artifacts/password.png`
 - `verification/artifacts/physical-device.png`

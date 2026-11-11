@@ -30,7 +30,7 @@ class KeyboardLayoutTest {
             listOf("1", "2", "3", "4", "5", "6", "7", "8", "9", "0"),
             with.rows[0].keys.map { it.label },
         )
-        assertTrue(with.rows[0].heightFactor < 0.8f)
+        assertTrue(with.rows[0].heightFactor <= 0.8f)
         assertTrue(with.rows[0].keys.all { it.numberRow })
         assertEquals("q", with.rows[1].keys[0].label)
     }

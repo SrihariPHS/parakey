@@ -105,7 +105,7 @@ object KeyboardLayouts {
                         char("7", numberRow = true), char("8", numberRow = true),
                         char("9", numberRow = true), char("0", numberRow = true),
                     ),
-                    heightFactor = 0.62f,
+                    heightFactor = 0.8f,
                 ),
             )
         }

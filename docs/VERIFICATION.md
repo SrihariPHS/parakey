@@ -39,11 +39,11 @@ The suite also checks:
   deletes the whole previous word in one gesture.
 - **Emoji recents**: inserting 🚀 must add it to the persisted recents list and
   put it in the first emoji cell on the next visit.
-- **Number strip**: with the setting on, the keymap must gain exactly ten
-  digits and one row, stay inside the view, stay under 1500 px, gain less than
-  170 px of height (the strip is 62% of a row), flag every digit as part of the
-  strip, and produce `1234567890` from real corner and center taps. Turning it
-  off restores the four-row layout.
+- **Number row**: with the setting on, the keymap must gain exactly ten digits
+  and one row, stay inside the view, stay under 1500 px, gain between 30 and
+  170 px of height (the row is 80% of a letter row), flag every digit as part of
+  that row, and produce `1234567890` from real corner and center taps. Turning
+  it off restores the four-row layout.
 - **PIN number pad**: launching a real `TYPE_CLASS_NUMBER` PIN field must
   switch the IME to a 3×4 `NUMBER` page with no letters, backspace and enter,
   and four real taps must produce `1234`. The touch path is real; the harness

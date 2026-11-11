@@ -503,20 +503,6 @@ class KeyboardView @JvmOverloads constructor(
         val density = resources.displayMetrics.density
         val radius = dimens.keyRadius * density
 
-        // The number row is a single utility strip, not ten more letter keys.
-        val numberRects = keyRects.filter { it.first.numberRow }.map { it.second }
-        if (numberRects.isNotEmpty()) {
-            val strip = RectF(
-                numberRects.minOf { it.left } - dimens.sidePad * density,
-                numberRects.minOf { it.top },
-                numberRects.maxOf { it.right } + dimens.sidePad * density,
-                numberRects.maxOf { it.bottom },
-            )
-            paint.color = palette.special
-            paint.style = Paint.Style.FILL
-            canvas.drawRoundRect(strip, radius * 0.8f, radius * 0.8f, paint)
-        }
-
         for ((key, rect) in keyRects) {
             val pressed = pressedKey?.stableId == key.stableId
             val bg = when {
@@ -525,38 +511,22 @@ class KeyboardView @JvmOverloads constructor(
                 key.special -> palette.special
                 else -> palette.key
             }
-            if (key.numberRow) {
-                if (pressed) {
-                    paint.color = palette.accent
-                    paint.style = Paint.Style.FILL
-                    canvas.drawRoundRect(
-                        rect.left + 2f * density,
-                        rect.top + 2f * density,
-                        rect.right - 2f * density,
-                        rect.bottom - 2f * density,
-                        radius * 0.7f,
-                        radius * 0.7f,
-                        paint,
-                    )
-                }
-            } else {
-                if (!key.special) {
-                    paint.color = palette.shadow
-                    paint.style = Paint.Style.FILL
-                    canvas.drawRoundRect(
-                        rect.left,
-                        rect.top + 2f * density,
-                        rect.right,
-                        rect.bottom + 2f * density,
-                        radius,
-                        radius,
-                        paint,
-                    )
-                }
-                paint.color = bg
+            if (!key.special) {
+                paint.color = palette.shadow
                 paint.style = Paint.Style.FILL
-                canvas.drawRoundRect(rect, radius, radius, paint)
+                canvas.drawRoundRect(
+                    rect.left,
+                    rect.top + 2f * density,
+                    rect.right,
+                    rect.bottom + 2f * density,
+                    radius,
+                    radius,
+                    paint,
+                )
             }
+            paint.color = bg
+            paint.style = Paint.Style.FILL
+            canvas.drawRoundRect(rect, radius, radius, paint)
 
             val label = KeyboardLayouts.displayLabel(key, page, shift)
             if (key.icon != KeyIcon.NONE) {
@@ -568,16 +538,11 @@ class KeyboardView @JvmOverloads constructor(
                 val drawnIcon = if (key.action == KeyAction.SHIFT && shift == ShiftState.CAPS) KeyIcon.CAPS else key.icon
                 drawIcon(canvas, drawnIcon, rect.centerX(), rect.centerY(), min(rect.width(), rect.height()) * 0.38f, iconColor)
             } else if (label.isNotEmpty()) {
-                textPaint.color = when {
-                    key.accent -> palette.onAccent
-                    key.numberRow && pressed -> palette.onAccent
-                    else -> palette.text
-                }
+                textPaint.color = if (key.accent) palette.onAccent else palette.text
                 textPaint.typeface = if (key.special) Typeface.create("sans-serif-medium", Typeface.NORMAL) else Typeface.create("sans-serif", Typeface.NORMAL)
                 textPaint.textSize = when {
                     page == KeyboardPage.EMOJI -> dimens.emojiSize * density
                     key.action == KeyAction.SPACE -> 11f * density
-                    key.numberRow -> dimens.numberSize * density
                     page == KeyboardPage.NUMBER && key.action == KeyAction.CHARACTER -> 30f * density
                     key.special -> dimens.specialSize * density
                     else -> dimens.letterSize * density

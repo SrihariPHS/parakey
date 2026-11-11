@@ -35,9 +35,9 @@ keylogging, no overlays.
 - **Appearance:** System, Light, Dark and true-black AMOLED modes with five
   accent palettes (mint, blue, violet, sunset, rose). Light accents are tuned
   for WCAG contrast; the keyboard and setup screen share the same palette.
-- **Optional number strip:** one toggle adds a slim, flat 1–0 strip above the
-  letters. It reads as a utility strip, not ten extra letter keys, and leaves
-  the symbols and emoji pages unchanged. Off by default.
+- **Optional number row:** one toggle adds 1–0 above the letters, using the
+  same raised key style and 20% shorter than a letter row. It leaves the
+  symbols and emoji pages unchanged. Off by default.
 - **Number-only pad:** PIN, phone and quantity fields get a large 3×4 keypad
   with backspace and enter, no letters and no word suggestions. Voice typing is
   disabled there.
@@ -109,7 +109,7 @@ The suite builds, installs and drives the real keyboard on the connected device.
 It checks the build, IME registration, every key page, text insertion, password
 privacy, ASR accuracy against six known WAV fixtures, latency, warm starts,
 AudioRecord capture, rotation, all 20 theme/accent palettes, the optional
-number strip, the PIN number pad, long-press popups, long-press-space cursor
+number row, the PIN number pad, long-press popups, long-press-space cursor
 movement, sound/haptic toggles, monkey taps and the setup flow. Every check writes evidence to
 `verification/report.json` and `verification/REPORT.md`.
 

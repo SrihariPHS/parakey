@@ -11,7 +11,7 @@ Every user request is mapped to the artifact that proves it. Check IDs come from
 | 4 | No dead zones / tiled hitboxes | `KeyboardView.layoutGeometry` midpoint tiling; 8 dp slop only for top-bar mic/gear/clip | K18, human profiles K01–K03 |
 | 5 | Four theme modes: System, Light, Dark, AMOLED | `KeyboardTheme.palette`, `MainActivity.buildThemeCard`, `TryActivity` | T01, T02 (force-stop + relaunch); setup theme card is visually reviewed, not unit-tested |
 | 6 | Five accent palettes with readable contrast | `KeyboardTheme.accentPalette` | T01 (100 contrast pairs), T02 |
-| 7 | Optional number strip 1–0, default off, visually distinct | `KeyboardLayouts.specFor(..., numberRow)`, `KeyRow.heightFactor`, `KeyboardView` flat strip | N01 (slim delta + flags), N02, JVM `numberRowIsOptionalAndAddsOneDigitRow` |
+| 7 | Optional number row 1–0, default off, 20% shorter, original key style | `KeyboardLayouts.specFor(..., numberRow)`, `KeyRow.heightFactor = 0.8` | N01 (shorter-row delta + flags), N02, JVM `numberRowIsOptionalAndAddsOneDigitRow` |
 | 7b | Number-only pad for PIN/phone/decimal fields | `KeyboardPage.NUMBER`, `KeyboardLayouts.numberPad`, `SettingsStore.numericPadEnabled`, `ParakeyImeService.onStartInput` | N03 (real PIN field, real taps, mic/suggestions off), JVM number-pad tests |
 | 8 | Long-press accent/punctuation popup | `KeyboardView.alternatesByKey`, `openAlternatePopup`, `commitAlternate` | A01 |
 | 9 | Long-press space moves the cursor | `beginCursorMode`, `handleCursorMove`, `ParakeyImeService.onCursorMove` | A02 |
@@ -20,7 +20,7 @@ Every user request is mapped to the artifact that proves it. Check IDs come from
 | 12 | Recently used emoji move to the front | `SettingsStore.emojiRecents`, `KeyboardLayouts.emoji` | K17, JVM `recentEmojiMoveToTheFrontWithoutChangingPageSize` |
 | 13 | Works on Moto G85 and other Android 8.0+ arm64 phones | `minSdk 26`; one APK with `abiFilters` arm64-v8a + x86_64; compatibility doc | B03, B09–B11, `docs/COMPATIBILITY.md`; **API 26 and other phones are unexercised**; Moto R11 is **UNPROVEN in the current report** |
 | 14 | 100-check live gate, ≥99/100 | `scripts/verify.py`, `scripts/gate.sh`, `gate-guards.py` | latest `verification/REPORT.md`: 99/100, all 99 automated checks pass, R11 pending |
-| 15 | Signed release on GitHub, no debug hooks | `app/build.gradle.kts`, debug-only manifest | v1.1.1 asset SHA-256 `f1ef2532cdd9ba880762848865763bc0351f8101a1c56558c1ddf67d4833bbc4`; apksigner CN=Parakey; no DebugReceiver/SelfTestActivity; B14/P03 |
+| 15 | Signed release on GitHub, no debug hooks | `app/build.gradle.kts`, debug-only manifest | v1.1.2 asset SHA-256 `4410218ccf3b5119290b28875f98253d9ce4d2577cc1f3ab58b1e823000bb7f4`; apksigner CN=Parakey; no DebugReceiver/SelfTestActivity; B14/P03 |
 | 16 | Phone coordinated with other agents, PIN never stored | session coordination; PIN never written to a file | no PIN value in tracked files or history; thread messages are session evidence, not repo evidence |
 | 17 | Multiple agents used to audit the work | two early audits plus five feature-design agents; three deepseek-v4.1-flash auditors completed (traceability, release artifact, feature completeness) | audit findings are folded into the fixes below; the audit transcripts themselves are session evidence, not committed files |
 

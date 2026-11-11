@@ -1900,7 +1900,7 @@ def build_checks(h: Harness) -> None:
     h.check("N03", "Number row", "PIN fields get a 3x4 numeric pad", n_pin_pad)
     h.check("T01", "Themes", "All 20 theme/accent palettes meet contrast targets", t_contrast)
     h.check("T02", "Themes", "Theme and accent survive an IME relaunch", t_persist)
-    h.check("N01", "Number row", "Number row adds one fitted row and height stays sane", n_geometry)
+    h.check("N01", "Number row", "Number row is 20% shorter and still fits", n_geometry)
     h.check("N02", "Number row", "Digits 1-0 insert from corner and center taps", n_digits)
     h.check("A01", "Gestures", "Long-press popup opens, selects and cancels", a_alternates)
     h.check("A02", "Gestures", "Long-press space moves the cursor without a space", a_cursor)

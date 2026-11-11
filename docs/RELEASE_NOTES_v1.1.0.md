@@ -1,4 +1,4 @@
-# Parakey 1.1.1 — number pad, smarter typing and zoom-free number row
+# Parakey 1.1.2 — number pad, smarter typing and zoom-free number row
 
 This release keeps the verified typing and voice baseline and adds a functional
 round: a dedicated numeric keypad, a slimmer and clearly distinct number strip,
@@ -67,16 +67,15 @@ behaviour: System theme, mint accent, number row off, sound and haptics on.
 Android 8.0+ (API 26), arm64-v8a. The Moto G85 (Android 16) remains the physical
 reference device. No new permissions, dependencies or network calls.
 
-## 1.1.1 additions
+## 1.1.2 additions
 
 - **Number-only pad** for `TYPE_CLASS_NUMBER` and `TYPE_CLASS_PHONE` fields:
   a large 3×4 keypad with backspace, enter and an ABC escape, decimal and minus
   keys when the field asks for them, no letters, no word suggestions, no
   long-press symbols, and voice typing disabled. Toggle it off to keep the
   letter keyboard in number fields.
-- **Number strip redesign:** the optional 1–0 row is now one flat 62%-height
-  strip, drawn without individual raised-key shadows. It reads as a utility
-  strip, not as more letter keys.
+- **Number row:** restored to the original per-key raised style you preferred,
+  now 20% shorter than a letter row (0.8× height). No banded strip.
 - **Typing improvements:** a second, conservative two-edit autocorrect pass for
   longer words, more common misspellings, text-expansion shortcuts
   (`btw`, `idk`, `omw`, `lmk`, `tbh`, `brb`, `gtg`), and a much larger next-word
