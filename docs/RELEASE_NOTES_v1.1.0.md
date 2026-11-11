@@ -80,4 +80,4 @@ reference device. No new permissions, dependencies or network calls.
   (`btw`, `idk`, `omw`, `lmk`, `tbh`, `brb`, `gtg`), and a much larger next-word
   table.
 - **Smart punctuation:** a double quote becomes “ or ” based on context.
-- Both new features default to on and are covered by N03, N01 and K24.
+- The number strip and number pad default to on; the strip is off. Verified by N01, N02, N03 and K24.
