@@ -547,7 +547,7 @@ class MainActivity : android.app.Activity() {
         ) { settings.smartPunctuation = it })
         card.addView(toggleRow(
             "Number-only pad",
-            "Use a big 3×4 keypad for PIN, phone and number fields",
+            "Use a big 3×4 keypad for PIN and number fields",
             settings.numericPadEnabled,
         ) {
             settings.numericPadEnabled = it

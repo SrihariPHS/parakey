@@ -42,9 +42,13 @@ class KeyboardLayoutTest {
         assertEquals(listOf("1", "2", "3"), spec.rows[0].keys.map { it.label })
         assertEquals(listOf("4", "5", "6"), spec.rows[1].keys.map { it.label })
         assertEquals(listOf("7", "8", "9"), spec.rows[2].keys.map { it.label })
-        assertEquals("0", spec.rows[3].keys[1].label)
+        assertEquals("0", spec.rows[3].keys[2].label)
         assertTrue(spec.rows[3].keys.any { it.action == KeyAction.BACKSPACE })
         assertTrue(spec.rows[3].keys.any { it.action == KeyAction.ENTER })
+        // Optional decimal/sign keys appear only when the field asks for them.
+        val decimal = KeyboardLayouts.specFor(KeyboardPage.NUMBER, numberDecimal = true, numberSigned = true)
+        assertTrue(decimal.rows[3].keys.any { it.label == "." })
+        assertTrue(decimal.rows[3].keys.any { it.label == "-" })
     }
 
     @Test

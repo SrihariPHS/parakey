@@ -61,6 +61,7 @@ class ParakeyImeService : InputMethodService(), KeyboardView.Listener {
     private var transcribing = false
     private var generation = 0
     private var passwordField = false
+    private var numericField = false
     private var autoCorrectAllowed = true
     private var lastInsertedText: String? = null
     private var lastInsertedLength = 0
@@ -102,28 +103,33 @@ class ParakeyImeService : InputMethodService(), KeyboardView.Listener {
 
     override fun onStartInput(info: EditorInfo?, restarting: Boolean) {
         super.onStartInput(info, restarting)
-        if (!::keyboardView.isInitialized || info == null) return
-        val numeric = settings.numericPadEnabled && isNumericField(info)
-        keyboardView.setNumericOnly(numeric)
-        if (numeric) keyboardView.setMicEnabled(false, "Number pad")
+        if (!::keyboardView.isInitialized) return
+        numericField = info != null && isNumericField(info)
+        applyAppearance()
     }
 
     override fun onStartInputView(info: EditorInfo?, restarting: Boolean) {
         super.onStartInputView(info, restarting)
         if (!::keyboardView.isInitialized) return
-        applyAppearance()
         passwordField = info != null && isPasswordField(info)
         autoCorrectAllowed = info != null && allowsAutoCorrect(info)
-        val showNumeric = settings.numericPadEnabled && info != null && isNumericField(info)
+        numericField = info != null && isNumericField(info)
+        applyAppearance()
+        val showNumeric = settings.numericPadEnabled && numericField
         keyboardView.setNumericOnly(showNumeric)
         keyboardView.hideClipboardMode()
-        if (passwordField) {
+        if (showNumeric) {
+            cancelDictation()
+            keyboardView.setMicEnabled(false, "Number pad")
+            keyboardView.setStatus("Number pad")
+            keyboardView.setSuggestions(emptyList())
+        } else if (passwordField) {
             cancelDictation()
             keyboardView.setMicEnabled(false)
-            keyboardView.setStatus(if (showNumeric) "Number pad" else "Voice typing is off in password fields")
+            keyboardView.setStatus("Voice typing is off in password fields")
         } else {
             keyboardView.setMicEnabled(true)
-            keyboardView.setStatus(if (showNumeric) "Number pad" else "Tap the mic and speak")
+            keyboardView.setStatus("Tap the mic and speak")
         }
         keyboardView.showUndo(false)
         keyboardView.setShiftState(initialShift(info))
@@ -165,7 +171,7 @@ class ParakeyImeService : InputMethodService(), KeyboardView.Listener {
 
     private fun refreshSuggestions() {
         if (!::keyboardView.isInitialized) return
-        if (!settings.suggestionsEnabled || passwordField) {
+        if (!settings.suggestionsEnabled || passwordField || numericField || keyboardView.isNumericOnly()) {
             keyboardView.setSuggestions(emptyList())
             return
         }
@@ -209,6 +215,7 @@ class ParakeyImeService : InputMethodService(), KeyboardView.Listener {
         cancelDictation()
         if (::keyboardView.isInitialized) {
             keyboardView.setNumericOnly(false)
+            numericField = false
             keyboardView.hideVoiceMode()
             keyboardView.hideClipboardMode()
             keyboardView.setSuggestions(emptyList())
@@ -229,7 +236,7 @@ class ParakeyImeService : InputMethodService(), KeyboardView.Listener {
                 ic.deleteSurroundingText(1, 0)
             }
             val word = wordBeforeCursor()
-            val correction = SuggestionEngine.correct(word, settings.personalWords)
+            val correction = SuggestionEngine.correct(word, settings.personalWords, allowTwoEdit = true)
             if (correction != null && !correction.equals(word, ignoreCase = true)) {
                 val applied = "$correction$text"
                 val restore = "$word$text"
@@ -250,7 +257,8 @@ class ParakeyImeService : InputMethodService(), KeyboardView.Listener {
         var output = text
         if (settings.smartPunctuation && autoCorrectAllowed && !passwordField && text == "\"") {
             val before = ic?.getTextBeforeCursor(1, 0)?.toString().orEmpty()
-            output = if (before.isBlank() || before.lastOrNull()?.isWhitespace() == true) "\u201C" else "\u201D"
+            val openers = " \n\r\t([{<\u2013\u2014/"
+            output = if (before.isEmpty() || before.last() in openers) "\u201C" else "\u201D"
         }
         ic?.commitText(output, 1)
         if (keyboardView.currentPage() == KeyboardPage.EMOJI || text.codePoints().anyMatch { it >= 0x1F000 }) {
@@ -327,7 +335,7 @@ class ParakeyImeService : InputMethodService(), KeyboardView.Listener {
         val ic = currentInputConnection ?: return
         if (settings.autocorrectEnabled && autoCorrectAllowed) {
             val word = wordBeforeCursor()
-            val correction = SuggestionEngine.correct(word, settings.personalWords)
+            val correction = SuggestionEngine.correct(word, settings.personalWords, allowTwoEdit = true)
             if (correction != null && !correction.equals(word, ignoreCase = true)) {
                 val applied = "$correction "
                 val restore = "$word "
@@ -513,7 +521,13 @@ class ParakeyImeService : InputMethodService(), KeyboardView.Listener {
         lastInsertedLength = 0
         keyboardView.showUndo(false)
         if (!keyboardView.isVoiceMode()) {
-            keyboardView.setStatus(if (passwordField) "Voice typing is off in password fields" else "Tap the mic and speak")
+            keyboardView.setStatus(
+                when {
+                    numericField && keyboardView.isNumericOnly() -> "Number pad"
+                    passwordField -> "Voice typing is off in password fields"
+                    else -> "Tap the mic and speak"
+                },
+            )
         }
     }
 
@@ -532,7 +546,7 @@ class ParakeyImeService : InputMethodService(), KeyboardView.Listener {
 
     private fun isNumericField(info: EditorInfo): Boolean {
         return when (info.inputType and InputType.TYPE_MASK_CLASS) {
-            InputType.TYPE_CLASS_NUMBER -> true
+            InputType.TYPE_CLASS_NUMBER, InputType.TYPE_CLASS_PHONE -> true
             else -> false
         }
     }
@@ -574,6 +588,10 @@ class ParakeyImeService : InputMethodService(), KeyboardView.Listener {
     private fun toggleDictation() {
         if (passwordField) {
             toast("Voice typing is off in password fields")
+            return
+        }
+        if (numericField) {
+            toast("Voice typing is off in number fields")
             return
         }
         if (transcribing) {
@@ -802,6 +820,13 @@ class ParakeyImeService : InputMethodService(), KeyboardView.Listener {
             else KeyboardDimens(),
         )
         keyboardView.setNumberRow(settings.numberRowEnabled)
+        val numeric = settings.numericPadEnabled && numericField
+        val flags = currentInputEditorInfo?.inputType ?: 0
+        keyboardView.setNumberPadOptions(
+            decimal = numeric && flags and InputType.TYPE_NUMBER_FLAG_DECIMAL != 0,
+            signed = numeric && flags and InputType.TYPE_NUMBER_FLAG_SIGNED != 0,
+        )
+        keyboardView.setNumericOnly(numeric)
         keyboardView.setEmojiRecents(settings.emojiRecents)
         keyboardView.setFeedback(settings.hapticsEnabled, settings.soundEnabled)
     }
@@ -834,10 +859,10 @@ class ParakeyImeService : InputMethodService(), KeyboardView.Listener {
             "\"sound\":${settings.soundEnabled},\"hapticEvents\":$hapticEvents,\"soundEvents\":$soundEvents," +
             "\"palette\":{$paletteJson}," +
             "\"modelReady\":${modelRepository.isInstalled()}," +
-            "\"passwordField\":$passwordField,\"editorInputType\":${currentInputEditorInfo?.inputType ?: 0}," +
+            "\"passwordField\":$passwordField,\"numericField\":$numericField,\"editorInputType\":${currentInputEditorInfo?.inputType ?: 0}," +
             "\"transcribing\":$transcribing," +
             "\"autocorrect\":${settings.autocorrectEnabled},\"autoCorrectAllowed\":$autoCorrectAllowed," +
-            "\"suggestions\":${settings.suggestionsEnabled}," +
+            "\"suggestions\":${settings.suggestionsEnabled && !passwordField && !numericField}," +
             "\"autoCap\":${settings.autoCapitalizeEnabled},\"correctionsApplied\":$correctionsApplied," +
             "\"suggestionsCommitted\":$suggestionsCommitted,\"dictSize\":${SuggestionEngine.dictionarySize()}}"
     }
@@ -936,7 +961,7 @@ class ParakeyImeService : InputMethodService(), KeyboardView.Listener {
     }
 
     fun debugCorrect(word: String): String? =
-        SuggestionEngine.correct(word, settings.personalWords)
+        SuggestionEngine.correct(word, settings.personalWords, allowTwoEdit = true)
 
     fun debugResetInputState() {
         if (!::keyboardView.isInitialized) return

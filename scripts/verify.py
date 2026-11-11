@@ -1580,6 +1580,13 @@ def build_checks(h: Harness) -> None:
         contraction = h.field_text("field_message")
         h.clear_field()
         h.set_shift_off()
+        for char in "neccessary":
+            h.tap_key(char)
+        h.tap_key("space")
+        time.sleep(0.4)
+        two_edit = h.field_text("field_message")
+        h.clear_field()
+        h.set_shift_off()
         h.tap_key("q")
         h.tap_key("space")
         h.tap_key("space")
@@ -1602,10 +1609,10 @@ def build_checks(h: Harness) -> None:
         quote = h.field_text("field_message")
         h.reset_page()
         ok = (hits == len(typo_cases) and valid_kept == len(valid_cases) and quote == "\u201C" and
-              corrected == "the " and contraction == "might've " and
+              corrected == "the " and contraction == "might've " and two_edit == "necessary " and
               double_space == "q. " and uncorrected == "teh " and int(after) > before)
         return ok, (f"typos={hits}/{len(typo_cases)} valid={valid_kept}/{len(valid_cases)} "
-                    f"on={corrected!r} contraction={contraction!r} doubleSpace={double_space!r} "
+                    f"on={corrected!r} contraction={contraction!r} twoEdit={two_edit!r} doubleSpace={double_space!r} "
                     f"off={uncorrected!r} smartQuote={quote!r} counter={before}->{after} failures={failures}")
 
     h.check("K24", "Keyboard", "Dictionary autocorrect fires and can be disabled", k_autocorrect)
@@ -1880,11 +1887,15 @@ def build_checks(h: Harness) -> None:
             and any(k.get("action") == "ENTER" for k in km["keys"])
             and text == "1234"
             and state.get("numericOnly") is True
+            and state.get("numericField") is True
+            and state.get("micEnabled") is False
+            and state.get("suggestions") is False
         )
         h.debug("numeric_pad", enabled=True)
         h.launch_clean(TRY, focus="message")
         time.sleep(0.6)
-        return ok, f"page={page} numericOnly={state.get('numericOnly')} labels={labels[:9]} text={text!r} letters={has_letters}"
+        return ok, (f"page={page} numericOnly={state.get('numericOnly')} mic={state.get('micEnabled')} "
+                    f"suggestions={state.get('suggestions')} labels={labels[:9]} text={text!r} letters={has_letters}")
 
     h.check("N03", "Number row", "PIN fields get a 3x4 numeric pad", n_pin_pad)
     h.check("T01", "Themes", "All 20 theme/accent palettes meet contrast targets", t_contrast)

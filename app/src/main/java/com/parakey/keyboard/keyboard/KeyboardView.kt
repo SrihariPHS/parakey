@@ -75,6 +75,8 @@ class KeyboardView @JvmOverloads constructor(
     private var suggestions: List<String> = emptyList()
     private var numberRow = false
     private var numericOnly = false
+    private var numberDecimal = false
+    private var numberSigned = false
     private var emojiRecents: List<String> = emptyList()
     private var hapticsEnabled = true
     private var soundEnabled = true
@@ -171,6 +173,16 @@ class KeyboardView @JvmOverloads constructor(
     }
 
     fun isNumericOnly(): Boolean = numericOnly
+
+    fun setNumberPadOptions(decimal: Boolean, signed: Boolean) {
+        if (numberDecimal == decimal && numberSigned == signed) return
+        numberDecimal = decimal
+        numberSigned = signed
+        if (page == KeyboardPage.NUMBER) {
+            requestLayout()
+            invalidate()
+        }
+    }
 
     fun setNumberRow(enabled: Boolean) {
         if (numberRow == enabled) return
@@ -347,7 +359,7 @@ class KeyboardView @JvmOverloads constructor(
     }
 
     private fun desiredHeight(width: Int): Int {
-        val spec = KeyboardLayouts.specFor(page, numberRow, emojiRecents)
+        val spec = KeyboardLayouts.specFor(page, numberRow, emojiRecents, numberDecimal, numberSigned)
         val density = resources.displayMetrics.density
         val row = dimens.row * density
         val gap = dimens.gap * density
@@ -373,7 +385,7 @@ class KeyboardView @JvmOverloads constructor(
     private fun layoutGeometry(width: Int, height: Int) {
         if (width <= 0 || height <= 0) return
         val density = resources.displayMetrics.density
-        val spec = KeyboardLayouts.specFor(page, numberRow, emojiRecents)
+        val spec = KeyboardLayouts.specFor(page, numberRow, emojiRecents, numberDecimal, numberSigned)
         val topBar = dimens.topBar * density
         val contentTop = topBar + 4f * density
         val gap = dimens.gap * density
@@ -1107,7 +1119,7 @@ class KeyboardView @JvmOverloads constructor(
     )
 
     private fun alternatesFor(key: Key): List<String> {
-        if (key.action != KeyAction.CHARACTER || page == KeyboardPage.EMOJI) return emptyList()
+        if (key.action != KeyAction.CHARACTER || page == KeyboardPage.EMOJI || page == KeyboardPage.NUMBER) return emptyList()
         val values = alternatesByKey[key.output] ?: return emptyList()
         val upper = page == KeyboardPage.LETTERS && shift != ShiftState.OFF &&
             key.output.length == 1 && key.output[0].isLetter()
@@ -1688,7 +1700,10 @@ class KeyboardView @JvmOverloads constructor(
             KeyAction.ENTER -> listener?.onEnter()
             KeyAction.SPACE -> listener?.onSpace()
             KeyAction.SYMBOLS -> if (!numericOnly) setPage(if (page == KeyboardPage.SYMBOLS) KeyboardPage.MORE_SYMBOLS else KeyboardPage.SYMBOLS)
-            KeyAction.LETTERS -> if (!numericOnly) setPage(KeyboardPage.LETTERS)
+            KeyAction.LETTERS -> if (!numericOnly || page == KeyboardPage.NUMBER) {
+                setNumericOnly(false)
+                setPage(KeyboardPage.LETTERS)
+            }
             KeyAction.EMOJI -> if (!numericOnly) setPage(KeyboardPage.EMOJI)
             KeyAction.MIC -> listener?.onMic()
             KeyAction.SETTINGS -> listener?.onSettings()

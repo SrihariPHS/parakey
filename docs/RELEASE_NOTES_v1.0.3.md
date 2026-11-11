@@ -1,9 +1,8 @@
-# Parakey 1.1.0 — number pad, smarter typing and zoom-free number row
+# Parakey 1.0.3 — themes, number row and long-press gestures
 
-This release keeps the verified typing and voice baseline and adds a functional
-round: a dedicated numeric keypad, a slimmer and clearly distinct number strip,
-smarter autocorrect and next-word prediction, smart quotes, and a test pad that
-follows the selected palette. Every new feature defaults to the previous
+This release keeps the verified typing and voice baseline and adds the feature
+round requested after 1.0.1. It also matches the test pad to the AMOLED and
+accent palette selected for the keyboard. Every new feature defaults to the previous
 behaviour: System theme, mint accent, number row off, sound and haptics on.
 
 ## Appearance
@@ -65,19 +64,3 @@ behaviour: System theme, mint accent, number row off, sound and haptics on.
 
 Android 8.0+ (API 26), arm64-v8a. The Moto G85 (Android 16) remains the physical
 reference device. No new permissions, dependencies or network calls.
-
-## 1.1.0 additions
-
-- **Number-only pad** for `TYPE_CLASS_NUMBER` fields (PIN, phone, quantity):
-  a large 3×4 keypad with backspace and enter, no letters, no word suggestions,
-  and voice typing disabled. Toggle it off to keep the letter keyboard in
-  number fields.
-- **Number strip redesign:** the optional 1–0 row is now 62% of a normal row,
-  separated by a hairline divider, drawn without the raised-key shadow and in
-  the hint colour. It reads as a utility strip, not as more letter keys.
-- **Typing improvements:** a second, conservative two-edit autocorrect pass for
-  longer words, more common misspellings, text-expansion shortcuts
-  (`btw`, `idk`, `omw`, `lmk`, `tbh`, `brb`, `gtg`), and a much larger next-word
-  table.
-- **Smart punctuation:** a double quote becomes “ or ” based on context.
-- Both new features default to on and are covered by N03, N01 and K24.

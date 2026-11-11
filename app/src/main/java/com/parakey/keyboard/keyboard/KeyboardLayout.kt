@@ -62,12 +62,14 @@ object KeyboardLayouts {
         page: KeyboardPage,
         numberRow: Boolean = false,
         emojiRecents: List<String> = emptyList(),
+        numberDecimal: Boolean = false,
+        numberSigned: Boolean = false,
     ): KeyboardSpec = when (page) {
         KeyboardPage.LETTERS -> letters(numberRow)
         KeyboardPage.SYMBOLS -> symbols()
         KeyboardPage.MORE_SYMBOLS -> moreSymbols()
         KeyboardPage.EMOJI -> emoji(emojiRecents)
-        KeyboardPage.NUMBER -> numberPad()
+        KeyboardPage.NUMBER -> numberPad(numberDecimal, numberSigned)
     }
 
     fun displayLabel(key: Key, page: KeyboardPage, shift: ShiftState): String {
@@ -234,18 +236,21 @@ object KeyboardLayouts {
         )
     }
 
-    private fun numberPad() = KeyboardSpec(
-        listOf(
-            KeyRow(listOf(char("1"), char("2"), char("3"))),
-            KeyRow(listOf(char("4"), char("5"), char("6"))),
-            KeyRow(listOf(char("7"), char("8"), char("9"))),
-            KeyRow(
-                listOf(
-                    Key(KeyAction.BACKSPACE, icon = KeyIcon.BACKSPACE, weight = 1f, special = true),
-                    char("0"),
-                    Key(KeyAction.ENTER, icon = KeyIcon.ENTER, weight = 1f, special = true, accent = true),
-                ),
+    private fun numberPad(decimal: Boolean, signed: Boolean): KeyboardSpec {
+        val bottom = mutableListOf<Key>()
+        bottom.add(Key(KeyAction.LETTERS, label = "ABC", weight = 1f, special = true))
+        bottom.add(Key(KeyAction.BACKSPACE, icon = KeyIcon.BACKSPACE, weight = 1f, special = true))
+        bottom.add(char("0"))
+        if (decimal) bottom.add(char("."))
+        if (signed) bottom.add(char("-"))
+        bottom.add(Key(KeyAction.ENTER, icon = KeyIcon.ENTER, weight = 1f, special = true, accent = true))
+        return KeyboardSpec(
+            listOf(
+                KeyRow(listOf(char("1"), char("2"), char("3"))),
+                KeyRow(listOf(char("4"), char("5"), char("6"))),
+                KeyRow(listOf(char("7"), char("8"), char("9"))),
+                KeyRow(bottom),
             ),
-        ),
-    )
+        )
+    }
 }

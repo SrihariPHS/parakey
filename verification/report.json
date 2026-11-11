@@ -4,8 +4,8 @@
   "total": 100,
   "threshold": 99,
   "physical_pending": true,
-  "generated_at": "2026-11-11T10:06:49+00:00",
-  "duration_seconds": 487,
+  "generated_at": "2026-11-11T11:09:29+00:00",
+  "duration_seconds": 490,
   "serial": "redacted",
   "device": {
     "model": "sdk_gphone64_arm64",
@@ -13,8 +13,8 @@
     "abi": "arm64-v8a",
     "emulator": true
   },
-  "apk_sha256": "d0e91f1a005b7d2374061d978422e6e8c835309956e1cf808d66507d9b104dd7",
-  "script_sha256": "86f3e9cab85f16f603aa6d4f1b2a930a7d8a544fba1835b293171b330d84fef0",
+  "apk_sha256": "ef68ec56b9dba6fdc4ed84b66a152da93fb8de70ce9b8c442fdbb136439d324f",
+  "script_sha256": "1a85bf80897a25a0fc0955d01c626f7869cc4f5f2f4eafe854f4fa7e6afccfb3",
   "argv": [
     "scripts/verify.py",
     "--serial",
@@ -31,7 +31,7 @@
       "status": "pass",
       "evidence": "gradlew + wrapper jar present",
       "duration_ms": 0,
-      "at": "2026-11-11T09:59:06+00:00"
+      "at": "2026-11-11T11:01:39+00:00"
     },
     {
       "id": "B02",
@@ -40,7 +40,7 @@
       "status": "pass",
       "evidence": "missing=[]",
       "duration_ms": 0,
-      "at": "2026-11-11T09:59:06+00:00"
+      "at": "2026-11-11T11:01:39+00:00"
     },
     {
       "id": "B03",
@@ -49,7 +49,7 @@
       "status": "pass",
       "evidence": "compileSdk=35 targetSdk=35 minSdk=26",
       "duration_ms": 0,
-      "at": "2026-11-11T09:59:06+00:00"
+      "at": "2026-11-11T11:01:39+00:00"
     },
     {
       "id": "B04",
@@ -58,7 +58,7 @@
       "status": "pass",
       "evidence": "gradlew :app:assembleDebug",
       "duration_ms": 0,
-      "at": "2026-11-11T09:59:06+00:00"
+      "at": "2026-11-11T11:01:39+00:00"
     },
     {
       "id": "B05",
@@ -67,7 +67,7 @@
       "status": "pass",
       "evidence": "gradlew :app:testDebugUnitTest",
       "duration_ms": 0,
-      "at": "2026-11-11T09:59:06+00:00"
+      "at": "2026-11-11T11:01:39+00:00"
     },
     {
       "id": "B06",
@@ -76,25 +76,25 @@
       "status": "pass",
       "evidence": "gradlew :app:lintDebug",
       "duration_ms": 0,
-      "at": "2026-11-11T09:59:06+00:00"
+      "at": "2026-11-11T11:01:39+00:00"
     },
     {
       "id": "B07",
       "category": "Build",
       "name": "Debug APK exists",
       "status": "pass",
-      "evidence": "/Users/srihari/workspace/parakey/app/build/outputs/apk/debug/app-debug.apk (28691675 bytes)",
+      "evidence": "/Users/srihari/workspace/parakey/app/build/outputs/apk/debug/app-debug.apk (28626151 bytes)",
       "duration_ms": 0,
-      "at": "2026-11-11T09:59:06+00:00"
+      "at": "2026-11-11T11:01:39+00:00"
     },
     {
       "id": "B08",
       "category": "Build",
       "name": "APK is under 40 MB (model not bundled)",
       "status": "pass",
-      "evidence": "27.4 MB",
+      "evidence": "27.3 MB",
       "duration_ms": 0,
-      "at": "2026-11-11T09:59:06+00:00"
+      "at": "2026-11-11T11:01:39+00:00"
     },
     {
       "id": "B09",
@@ -103,7 +103,7 @@
       "status": "pass",
       "evidence": "arm64-v8a sherpa JNI",
       "duration_ms": 0,
-      "at": "2026-11-11T09:59:06+00:00"
+      "at": "2026-11-11T11:01:39+00:00"
     },
     {
       "id": "B10",
@@ -112,7 +112,7 @@
       "status": "pass",
       "evidence": "x86_64 sherpa JNI",
       "duration_ms": 0,
-      "at": "2026-11-11T09:59:06+00:00"
+      "at": "2026-11-11T11:01:39+00:00"
     },
     {
       "id": "B11",
@@ -121,7 +121,7 @@
       "status": "pass",
       "evidence": "onnxruntime native library",
       "duration_ms": 0,
-      "at": "2026-11-11T09:59:06+00:00"
+      "at": "2026-11-11T11:01:39+00:00"
     },
     {
       "id": "B12",
@@ -129,8 +129,8 @@
       "name": "IME service and method metadata are packaged",
       "status": "pass",
       "evidence": "IME service + method metadata + BIND_INPUT_METHOD",
-      "duration_ms": 14,
-      "at": "2026-11-11T09:59:06+00:00"
+      "duration_ms": 12,
+      "at": "2026-11-11T11:01:39+00:00"
     },
     {
       "id": "B13",
@@ -138,17 +138,17 @@
       "name": "Microphone and internet permissions are packaged",
       "status": "pass",
       "evidence": "RECORD_AUDIO + INTERNET",
-      "duration_ms": 7,
-      "at": "2026-11-11T09:59:06+00:00"
+      "duration_ms": 9,
+      "at": "2026-11-11T11:01:39+00:00"
     },
     {
       "id": "B14",
       "category": "Build",
       "name": "Package id and version are correct",
       "status": "pass",
-      "evidence": "package com.parakey.keyboard version 1.1.0",
-      "duration_ms": 7,
-      "at": "2026-11-11T09:59:06+00:00"
+      "evidence": "package com.parakey.keyboard version 1.1.1",
+      "duration_ms": 9,
+      "at": "2026-11-11T11:01:39+00:00"
     },
     {
       "id": "B15",
@@ -156,8 +156,8 @@
       "name": "Model weights are not committed",
       "status": "pass",
       "evidence": "weight files in repo=0, ignored=True",
-      "duration_ms": 51,
-      "at": "2026-11-11T09:59:06+00:00"
+      "duration_ms": 74,
+      "at": "2026-11-11T11:01:40+00:00"
     },
     {
       "id": "B16",
@@ -166,7 +166,7 @@
       "status": "pass",
       "evidence": "LICENSE + Parakeet CC-BY-4.0 notice",
       "duration_ms": 0,
-      "at": "2026-11-11T09:59:06+00:00"
+      "at": "2026-11-11T11:01:40+00:00"
     },
     {
       "id": "B17",
@@ -175,7 +175,7 @@
       "status": "pass",
       "evidence": "README covers installation, Moto G85 and verification",
       "duration_ms": 0,
-      "at": "2026-11-11T09:59:06+00:00"
+      "at": "2026-11-11T11:01:40+00:00"
     },
     {
       "id": "P01",
@@ -183,8 +183,8 @@
       "name": "No broad storage or overlay permissions",
       "status": "pass",
       "evidence": "forbidden=[]",
-      "duration_ms": 7,
-      "at": "2026-11-11T09:59:06+00:00"
+      "duration_ms": 10,
+      "at": "2026-11-11T11:01:40+00:00"
     },
     {
       "id": "P02",
@@ -192,8 +192,8 @@
       "name": "IME is protected by BIND_INPUT_METHOD",
       "status": "pass",
       "evidence": "IME is bound by the system permission",
-      "duration_ms": 22,
-      "at": "2026-11-11T09:59:06+00:00"
+      "duration_ms": 23,
+      "at": "2026-11-11T11:01:40+00:00"
     },
     {
       "id": "P03",
@@ -202,7 +202,7 @@
       "status": "pass",
       "evidence": "debug receiver is debug-only",
       "duration_ms": 0,
-      "at": "2026-11-11T09:59:06+00:00"
+      "at": "2026-11-11T11:01:40+00:00"
     },
     {
       "id": "P04",
@@ -210,8 +210,8 @@
       "name": "Password fields disable dictation",
       "status": "pass",
       "evidence": "micEnabled=False status='Voice typing is off in password fields'",
-      "duration_ms": 12182,
-      "at": "2026-11-11T09:59:18+00:00"
+      "duration_ms": 12116,
+      "at": "2026-11-11T11:01:52+00:00"
     },
     {
       "id": "P05",
@@ -219,8 +219,8 @@
       "name": "No cleartext traffic configured",
       "status": "pass",
       "evidence": "no cleartext traffic configured",
-      "duration_ms": 1,
-      "at": "2026-11-11T09:59:18+00:00"
+      "duration_ms": 0,
+      "at": "2026-11-11T11:01:52+00:00"
     },
     {
       "id": "P06",
@@ -228,8 +228,8 @@
       "name": "No hardcoded API keys or tokens",
       "status": "pass",
       "evidence": "matches=[]",
-      "duration_ms": 20,
-      "at": "2026-11-11T09:59:18+00:00"
+      "duration_ms": 12,
+      "at": "2026-11-11T11:01:52+00:00"
     },
     {
       "id": "P07",
@@ -238,7 +238,7 @@
       "status": "pass",
       "evidence": "MODEL_URL=https://huggingface.co/VocaHQ/sherpa-onnx-nemo-parakeet-tdt-ctc-110m-en-int8/res",
       "duration_ms": 0,
-      "at": "2026-11-11T09:59:18+00:00"
+      "at": "2026-11-11T11:01:52+00:00"
     },
     {
       "id": "P08",
@@ -246,8 +246,8 @@
       "name": "Dictation path makes no network calls",
       "status": "pass",
       "evidence": "network references in dictation path=[]",
-      "duration_ms": 1,
-      "at": "2026-11-11T09:59:18+00:00"
+      "duration_ms": 0,
+      "at": "2026-11-11T11:01:52+00:00"
     },
     {
       "id": "I01",
@@ -255,26 +255,26 @@
       "name": "ADB device is online",
       "status": "pass",
       "evidence": "state=device model=sdk_gphone64_arm64",
-      "duration_ms": 17,
-      "at": "2026-11-11T09:59:18+00:00"
+      "duration_ms": 10,
+      "at": "2026-11-11T11:01:52+00:00"
     },
     {
       "id": "I02",
       "category": "IME",
       "name": "Debug APK is installed",
       "status": "pass",
-      "evidence": "package:/data/app/~~mWvnqFcpf0NCwo6hFMkVKQ==/com.parakey.keyboard-Ipxu85BMAEaFsumzAyq2vg==/base.apk",
-      "duration_ms": 38,
-      "at": "2026-11-11T09:59:18+00:00"
+      "evidence": "package:/data/app/~~YdPOGwNoMm7rD-SzSP9trA==/com.parakey.keyboard-6hRmyhCct7RSTfNxLNigrQ==/base.apk",
+      "duration_ms": 31,
+      "at": "2026-11-11T11:01:52+00:00"
     },
     {
       "id": "I03",
       "category": "IME",
       "name": "Setup activity launches",
       "status": "pass",
-      "evidence": "topResumedActivity=ActivityRecord{11a142e u0 com.parakey.keyboard/.MainActivity t1236}",
-      "duration_ms": 3219,
-      "at": "2026-11-11T09:59:21+00:00"
+      "evidence": "topResumedActivity=ActivityRecord{c5e17c6 u0 com.parakey.keyboard/.MainActivity t1300}",
+      "duration_ms": 3218,
+      "at": "2026-11-11T11:01:55+00:00"
     },
     {
       "id": "I04",
@@ -282,8 +282,8 @@
       "name": "Setup header renders",
       "status": "pass",
       "evidence": "setup header renders",
-      "duration_ms": 2871,
-      "at": "2026-11-11T09:59:24+00:00"
+      "duration_ms": 2859,
+      "at": "2026-11-11T11:01:58+00:00"
     },
     {
       "id": "I05",
@@ -291,8 +291,8 @@
       "name": "Speech model is ready on device",
       "status": "pass",
       "evidence": "modelReady=True",
-      "duration_ms": 4295,
-      "at": "2026-11-11T09:59:29+00:00"
+      "duration_ms": 4393,
+      "at": "2026-11-11T11:02:02+00:00"
     },
     {
       "id": "I06",
@@ -300,8 +300,8 @@
       "name": "Parakey IME is listed",
       "status": "pass",
       "evidence": "Parakey IME is listed",
-      "duration_ms": 15,
-      "at": "2026-11-11T09:59:29+00:00"
+      "duration_ms": 17,
+      "at": "2026-11-11T11:02:02+00:00"
     },
     {
       "id": "I07",
@@ -309,8 +309,8 @@
       "name": "Parakey IME is enabled",
       "status": "pass",
       "evidence": "Parakey IME is enabled",
-      "duration_ms": 16,
-      "at": "2026-11-11T09:59:29+00:00"
+      "duration_ms": 20,
+      "at": "2026-11-11T11:02:02+00:00"
     },
     {
       "id": "I08",
@@ -318,26 +318,26 @@
       "name": "Parakey IME is selected",
       "status": "pass",
       "evidence": "default_input_method=com.parakey.keyboard/.ParakeyImeService",
-      "duration_ms": 16,
-      "at": "2026-11-11T09:59:29+00:00"
+      "duration_ms": 18,
+      "at": "2026-11-11T11:02:02+00:00"
     },
     {
       "id": "I09",
       "category": "IME",
       "name": "IME service is running",
       "status": "pass",
-      "evidence": "service state={'voiceMode': False, 'recording': False, 'processing': False, 'clipboardMode': False, 'suggestions': True, 'micEnabled': True, 'page': 'LETTERS', 'shift': 'ON', 'width': 1080, 'height': 819, 'bottomInset': 63, 'numberRow': False, 'alternatePopup': False, 'alternateSelected': -1, 'cursorMode': False, 'viewAccent': '#0C7C5B', 'viewBackground': '#EEF1F6', 'viewNumberRow': False, 'numericOnly': False, 'status': 'Tap the mic and speak', 'theme': 'system', 'accent': 'mint', 'numericPad': True, 'haptics': True, 'emojiRecents': ['\ud83d\ude80'], 'sound': True, 'hapticEvents': 0, 'soundEvents': 0, 'palette': {'background': '#EEF1F6', 'key': '#FFFFFF', 'text': '#0F172A', 'hint': '#5B6B80', 'accent': '#0C7C5B', 'onAccent': '#FFFFFF', 'suggestionBg': '#FFFFFF', 'suggestionText': '#475569', 'border': '#E2E8F0'}, 'modelReady': True, 'passwordField': False, 'editorInputType': 147457, 'transcribing': False, 'autocorrect': True, 'autoCorrectAllowed': True, 'autoCap': True, 'correctionsApplied': 0, 'suggestionsCommitted': 0, 'dictSize': 43230}",
-      "duration_ms": 4286,
-      "at": "2026-11-11T09:59:33+00:00"
+      "evidence": "service state={'voiceMode': False, 'recording': False, 'processing': False, 'clipboardMode': False, 'suggestions': True, 'micEnabled': True, 'page': 'LETTERS', 'shift': 'ON', 'width': 1080, 'height': 819, 'bottomInset': 63, 'numberRow': False, 'alternatePopup': False, 'alternateSelected': -1, 'cursorMode': False, 'viewAccent': '#0C7C5B', 'viewBackground': '#EEF1F6', 'viewNumberRow': False, 'numericOnly': False, 'status': 'Tap the mic and speak', 'theme': 'system', 'accent': 'mint', 'numericPad': True, 'haptics': True, 'emojiRecents': ['\ud83d\ude80'], 'sound': True, 'hapticEvents': 0, 'soundEvents': 0, 'palette': {'background': '#EEF1F6', 'key': '#FFFFFF', 'text': '#0F172A', 'hint': '#5B6B80', 'accent': '#0C7C5B', 'onAccent': '#FFFFFF', 'suggestionBg': '#FFFFFF', 'suggestionText': '#475569', 'border': '#E2E8F0'}, 'modelReady': True, 'passwordField': False, 'numericField': False, 'editorInputType': 147457, 'transcribing': False, 'autocorrect': True, 'autoCorrectAllowed': True, 'autoCap': True, 'correctionsApplied': 0, 'suggestionsCommitted': 0, 'dictSize': 43230}",
+      "duration_ms": 4301,
+      "at": "2026-11-11T11:02:07+00:00"
     },
     {
       "id": "I10",
       "category": "IME",
       "name": "Test pad launches",
       "status": "pass",
-      "evidence": "topResumedActivity=ActivityRecord{e3978e u0 com.parakey.keyboard/.TryActivity t1237}",
-      "duration_ms": 2977,
-      "at": "2026-11-11T09:59:36+00:00"
+      "evidence": "topResumedActivity=ActivityRecord{967fa80 u0 com.parakey.keyboard/.TryActivity t1301}",
+      "duration_ms": 3114,
+      "at": "2026-11-11T11:02:10+00:00"
     },
     {
       "id": "I11",
@@ -345,8 +345,8 @@
       "name": "Message field is focused",
       "status": "pass",
       "evidence": "focused=true",
-      "duration_ms": 6473,
-      "at": "2026-11-11T09:59:42+00:00"
+      "duration_ms": 6322,
+      "at": "2026-11-11T11:02:16+00:00"
     },
     {
       "id": "I12",
@@ -354,8 +354,8 @@
       "name": "Software keyboard is shown",
       "status": "pass",
       "evidence": "shown=True",
-      "duration_ms": 69,
-      "at": "2026-11-11T09:59:43+00:00"
+      "duration_ms": 44,
+      "at": "2026-11-11T11:02:16+00:00"
     },
     {
       "id": "I13",
@@ -363,8 +363,8 @@
       "name": "Keyboard height is sane",
       "status": "pass",
       "evidence": "keyboard height=819px",
-      "duration_ms": 86,
-      "at": "2026-11-11T09:59:43+00:00"
+      "duration_ms": 68,
+      "at": "2026-11-11T11:02:16+00:00"
     },
     {
       "id": "I14",
@@ -372,8 +372,8 @@
       "name": "Navigation-bar inset is handled",
       "status": "pass",
       "evidence": "bottomInset=63 imeTop=1581",
-      "duration_ms": 85,
-      "at": "2026-11-11T09:59:43+00:00"
+      "duration_ms": 100,
+      "at": "2026-11-11T11:02:16+00:00"
     },
     {
       "id": "I15",
@@ -382,7 +382,7 @@
       "status": "pass",
       "evidence": "mInFullscreenMode=False",
       "duration_ms": 19,
-      "at": "2026-11-11T09:59:43+00:00"
+      "at": "2026-11-11T11:02:16+00:00"
     },
     {
       "id": "I16",
@@ -390,8 +390,8 @@
       "name": "IME survives app switching",
       "status": "pass",
       "evidence": "keyboard returns after home/app switch",
-      "duration_ms": 10288,
-      "at": "2026-11-11T09:59:53+00:00"
+      "duration_ms": 10391,
+      "at": "2026-11-11T11:02:27+00:00"
     },
     {
       "id": "K01",
@@ -399,8 +399,8 @@
       "name": "Precise human typing is character-exact",
       "status": "pass",
       "evidence": "CER=0.053 WER=0.000 observed='the quick brown fox '",
-      "duration_ms": 17308,
-      "at": "2026-11-11T10:00:10+00:00"
+      "duration_ms": 17191,
+      "at": "2026-11-11T11:02:44+00:00"
     },
     {
       "id": "K02",
@@ -408,8 +408,8 @@
       "name": "Average human typing with autocorrect",
       "status": "pass",
       "evidence": "CER=0.043 WER=0.000 observed='please call me tomorrow '",
-      "duration_ms": 17068,
-      "at": "2026-11-11T10:00:27+00:00"
+      "duration_ms": 17823,
+      "at": "2026-11-11T11:03:02+00:00"
     },
     {
       "id": "K03",
@@ -417,8 +417,8 @@
       "name": "Sloppy human typing with autocorrect",
       "status": "pass",
       "evidence": "CER=0.045 WER=0.000 observed='this is a test message '",
-      "duration_ms": 15546,
-      "at": "2026-11-11T10:00:43+00:00"
+      "duration_ms": 16166,
+      "at": "2026-11-11T11:03:18+00:00"
     },
     {
       "id": "K04",
@@ -426,8 +426,8 @@
       "name": "Space key inserts a space",
       "status": "pass",
       "evidence": "text='q '",
-      "duration_ms": 5875,
-      "at": "2026-11-11T10:00:49+00:00"
+      "duration_ms": 5800,
+      "at": "2026-11-11T11:03:24+00:00"
     },
     {
       "id": "K05",
@@ -435,8 +435,8 @@
       "name": "Period key inserts a period",
       "status": "pass",
       "evidence": "text='q.'",
-      "duration_ms": 5804,
-      "at": "2026-11-11T10:00:55+00:00"
+      "duration_ms": 6052,
+      "at": "2026-11-11T11:03:30+00:00"
     },
     {
       "id": "K06",
@@ -444,8 +444,8 @@
       "name": "Comma key inserts a comma",
       "status": "pass",
       "evidence": "text='q,'",
-      "duration_ms": 6000,
-      "at": "2026-11-11T10:01:01+00:00"
+      "duration_ms": 6014,
+      "at": "2026-11-11T11:03:36+00:00"
     },
     {
       "id": "K07",
@@ -453,8 +453,8 @@
       "name": "Backspace deletes a character",
       "status": "pass",
       "evidence": "text='qw'",
-      "duration_ms": 6112,
-      "at": "2026-11-11T10:01:07+00:00"
+      "duration_ms": 6190,
+      "at": "2026-11-11T11:03:42+00:00"
     },
     {
       "id": "K08",
@@ -462,8 +462,8 @@
       "name": "Long-press backspace repeats",
       "status": "pass",
       "evidence": "after long-press text='a' after swipe='hello '",
-      "duration_ms": 12985,
-      "at": "2026-11-11T10:01:20+00:00"
+      "duration_ms": 13047,
+      "at": "2026-11-11T11:03:55+00:00"
     },
     {
       "id": "K09",
@@ -471,8 +471,8 @@
       "name": "Enter inserts a newline",
       "status": "pass",
       "evidence": "text='q\\n'",
-      "duration_ms": 5485,
-      "at": "2026-11-11T10:01:25+00:00"
+      "duration_ms": 5733,
+      "at": "2026-11-11T11:04:01+00:00"
     },
     {
       "id": "K10",
@@ -480,8 +480,8 @@
       "name": "Shift toggles case",
       "status": "pass",
       "evidence": "text='qW'",
-      "duration_ms": 5719,
-      "at": "2026-11-11T10:01:31+00:00"
+      "duration_ms": 6072,
+      "at": "2026-11-11T11:04:07+00:00"
     },
     {
       "id": "K11",
@@ -489,8 +489,8 @@
       "name": "Double-shift caps lock",
       "status": "pass",
       "evidence": "shift=CAPS text='AB'",
-      "duration_ms": 6295,
-      "at": "2026-11-11T10:01:37+00:00"
+      "duration_ms": 6497,
+      "at": "2026-11-11T11:04:13+00:00"
     },
     {
       "id": "K14",
@@ -498,8 +498,8 @@
       "name": "ABC returns to letters",
       "status": "pass",
       "evidence": "text='q'",
-      "duration_ms": 6258,
-      "at": "2026-11-11T10:01:43+00:00"
+      "duration_ms": 6292,
+      "at": "2026-11-11T11:04:19+00:00"
     },
     {
       "id": "K17",
@@ -507,8 +507,8 @@
       "name": "Emoji inserts and appears in recents",
       "status": "pass",
       "evidence": "text='\ud83d\ude80' recents=['\ud83d\ude80'] firstEmoji='\ud83d\ude80'",
-      "duration_ms": 6556,
-      "at": "2026-11-11T10:01:50+00:00"
+      "duration_ms": 6820,
+      "at": "2026-11-11T11:04:26+00:00"
     },
     {
       "id": "K18",
@@ -516,8 +516,8 @@
       "name": "Key-gap taps hit the nearest key",
       "status": "pass",
       "evidence": "expected='qqqqqpppppaaaaalllllzzzzzmmmmm' observed='qqqqqpppppaaaaalllllzzzzzmmmmm'",
-      "duration_ms": 11148,
-      "at": "2026-11-11T10:02:01+00:00"
+      "duration_ms": 11294,
+      "at": "2026-11-11T11:04:38+00:00"
     },
     {
       "id": "K22",
@@ -525,8 +525,8 @@
       "name": "Landscape rotation keeps typing alive",
       "status": "pass",
       "evidence": "landscape=True keyboard=2400x604 screen=1080x2400",
-      "duration_ms": 17084,
-      "at": "2026-11-11T10:02:18+00:00"
+      "duration_ms": 17132,
+      "at": "2026-11-11T11:04:55+00:00"
     },
     {
       "id": "K23",
@@ -534,26 +534,26 @@
       "name": "Typing suggestions appear and insert",
       "status": "pass",
       "evidence": "suggestions=['he', 'held', 'help'] text='he '",
-      "duration_ms": 6656,
-      "at": "2026-11-11T10:02:25+00:00"
+      "duration_ms": 6676,
+      "at": "2026-11-11T11:05:01+00:00"
     },
     {
       "id": "K24",
       "category": "Keyboard",
       "name": "Dictionary autocorrect fires and can be disabled",
       "status": "pass",
-      "evidence": "typos=15/15 valid=11/11 on='the ' contraction=\"might've \" doubleSpace='q. ' off='teh ' smartQuote='\u201c' counter=0->1 failures=[]",
-      "duration_ms": 18151,
-      "at": "2026-11-11T10:02:43+00:00"
+      "evidence": "typos=15/15 valid=11/11 on='the ' contraction=\"might've \" twoEdit='necessary ' doubleSpace='q. ' off='teh ' smartQuote='\u201c' counter=0->1 failures=[]",
+      "duration_ms": 22140,
+      "at": "2026-11-11T11:05:24+00:00"
     },
     {
       "id": "N03",
       "category": "Number row",
       "name": "PIN fields get a 3x4 numeric pad",
       "status": "pass",
-      "evidence": "page=NUMBER numericOnly=True labels=['1', '2', '3', '4', '5', '6', '7', '8', '9'] text='1234' letters=False",
-      "duration_ms": 8948,
-      "at": "2026-11-11T10:02:52+00:00"
+      "evidence": "page=NUMBER numericOnly=True mic=False suggestions=False labels=['1', '2', '3', '4', '5', '6', '7', '8', '9'] text='1234' letters=False",
+      "duration_ms": 9083,
+      "at": "2026-11-11T11:05:33+00:00"
     },
     {
       "id": "T01",
@@ -561,8 +561,8 @@
       "name": "All 20 theme/accent palettes meet contrast targets",
       "status": "pass",
       "evidence": "100 contrast pairs checked; failures=[]",
-      "duration_ms": 1933,
-      "at": "2026-11-11T10:02:54+00:00"
+      "duration_ms": 1989,
+      "at": "2026-11-11T11:05:35+00:00"
     },
     {
       "id": "T02",
@@ -570,8 +570,8 @@
       "name": "Theme and accent survive an IME relaunch",
       "status": "pass",
       "evidence": "theme=amoled accent=rose bg=#000000 accentHex=#FB7185",
-      "duration_ms": 9380,
-      "at": "2026-11-11T10:03:03+00:00"
+      "duration_ms": 9399,
+      "at": "2026-11-11T11:05:44+00:00"
     },
     {
       "id": "N01",
@@ -579,8 +579,8 @@
       "name": "Number row adds one fitted row and height stays sane",
       "status": "pass",
       "evidence": "keys 34->44 digits=10 height=819->919 delta=100 rows=5 bad=0",
-      "duration_ms": 7224,
-      "at": "2026-11-11T10:03:11+00:00"
+      "duration_ms": 6984,
+      "at": "2026-11-11T11:05:51+00:00"
     },
     {
       "id": "N02",
@@ -588,8 +588,8 @@
       "name": "Digits 1-0 insert from corner and center taps",
       "status": "pass",
       "evidence": "expected='1234567890' observed='1234567890'",
-      "duration_ms": 9217,
-      "at": "2026-11-11T10:03:20+00:00"
+      "duration_ms": 8842,
+      "at": "2026-11-11T11:06:00+00:00"
     },
     {
       "id": "A01",
@@ -597,8 +597,8 @@
       "name": "Long-press popup opens, selects and cancels",
       "status": "pass",
       "evidence": "popup=True selected=2 text='\u00ea' base='e' cancelled=''",
-      "duration_ms": 11562,
-      "at": "2026-11-11T10:03:31+00:00"
+      "duration_ms": 11516,
+      "at": "2026-11-11T11:06:11+00:00"
     },
     {
       "id": "A02",
@@ -606,8 +606,8 @@
       "name": "Long-press space moves the cursor without a space",
       "status": "pass",
       "evidence": "cursorMode=True before='abcd' after='aqbcd' step=126px",
-      "duration_ms": 9188,
-      "at": "2026-11-11T10:03:41+00:00"
+      "duration_ms": 9364,
+      "at": "2026-11-11T11:06:21+00:00"
     },
     {
       "id": "S01",
@@ -615,8 +615,8 @@
       "name": "Sound and haptics obey their toggles",
       "status": "pass",
       "evidence": "off=0/0 on=1/1",
-      "duration_ms": 6631,
-      "at": "2026-11-11T10:03:47+00:00"
+      "duration_ms": 6660,
+      "at": "2026-11-11T11:06:27+00:00"
     },
     {
       "id": "D01",
@@ -624,8 +624,8 @@
       "name": "Model file is present at the expected size",
       "status": "pass",
       "evidence": "model bytes=131652171 expected=131652171",
-      "duration_ms": 21,
-      "at": "2026-11-11T10:03:47+00:00"
+      "duration_ms": 22,
+      "at": "2026-11-11T11:06:27+00:00"
     },
     {
       "id": "D02",
@@ -633,8 +633,8 @@
       "name": "Tokenizer is present at the expected size",
       "status": "pass",
       "evidence": "tokens bytes=9953 expected=9953",
-      "duration_ms": 27,
-      "at": "2026-11-11T10:03:47+00:00"
+      "duration_ms": 25,
+      "at": "2026-11-11T11:06:27+00:00"
     },
     {
       "id": "D03",
@@ -642,8 +642,8 @@
       "name": "Model checksum matches",
       "status": "pass",
       "evidence": "model=9177a9146cf32ee0\u2026 tokens=450e56bd2f03\u2026 path=/data/user/0/com.parakey.keyboard/files/models/parakeet-110m/model.int8.onnx",
-      "duration_ms": 168,
-      "at": "2026-11-11T10:03:47+00:00"
+      "duration_ms": 187,
+      "at": "2026-11-11T11:06:28+00:00"
     },
     {
       "id": "D04",
@@ -651,8 +651,8 @@
       "name": "Parakeet engine loads",
       "status": "pass",
       "evidence": "text='The quick brown fox jumps over the lazy dog'",
-      "duration_ms": 658,
-      "at": "2026-11-11T10:03:48+00:00"
+      "duration_ms": 708,
+      "at": "2026-11-11T11:06:28+00:00"
     },
     {
       "id": "D05",
@@ -661,7 +661,7 @@
       "status": "pass",
       "evidence": "WER=0.000 text='The quick brown fox jumps over the lazy dog'",
       "duration_ms": 0,
-      "at": "2026-11-11T10:03:48+00:00"
+      "at": "2026-11-11T11:06:28+00:00"
     },
     {
       "id": "D06",
@@ -669,8 +669,8 @@
       "name": "Fixture q2 transcription",
       "status": "pass",
       "evidence": "WER=0.000 text='Please remind me to buy milk and eggs on the way home'",
-      "duration_ms": 717,
-      "at": "2026-11-11T10:03:49+00:00"
+      "duration_ms": 732,
+      "at": "2026-11-11T11:06:29+00:00"
     },
     {
       "id": "D07",
@@ -678,8 +678,8 @@
       "name": "Fixture q3 transcription",
       "status": "pass",
       "evidence": "WER=0.000 text='Parakey is a private voice keyboard that runs entirely on this phone.'",
-      "duration_ms": 680,
-      "at": "2026-11-11T10:03:49+00:00"
+      "duration_ms": 712,
+      "at": "2026-11-11T11:06:30+00:00"
     },
     {
       "id": "D08",
@@ -687,8 +687,8 @@
       "name": "Fixture q4 transcription",
       "status": "pass",
       "evidence": "WER=0.000 text='Hello world. This is a test of the speech recognition model'",
-      "duration_ms": 720,
-      "at": "2026-11-11T10:03:50+00:00"
+      "duration_ms": 759,
+      "at": "2026-11-11T11:06:31+00:00"
     },
     {
       "id": "D09",
@@ -696,8 +696,8 @@
       "name": "Fixture q5 transcription",
       "status": "pass",
       "evidence": "WER=0.000 text='I would like a large coffee with oat milk. please'",
-      "duration_ms": 693,
-      "at": "2026-11-11T10:03:51+00:00"
+      "duration_ms": 770,
+      "at": "2026-11-11T11:06:31+00:00"
     },
     {
       "id": "D10",
@@ -705,44 +705,44 @@
       "name": "Long audio transcription",
       "status": "pass",
       "evidence": "WER=0.019 audioMs=17795",
-      "duration_ms": 704,
-      "at": "2026-11-11T10:03:52+00:00"
+      "duration_ms": 674,
+      "at": "2026-11-11T11:06:32+00:00"
     },
     {
       "id": "D11",
       "category": "ASR",
       "name": "q1 real-time factor",
       "status": "pass",
-      "evidence": "RTF=0.06770833333333333",
+      "evidence": "RTF=0.07291666666666667",
       "duration_ms": 0,
-      "at": "2026-11-11T10:03:52+00:00"
+      "at": "2026-11-11T11:06:32+00:00"
     },
     {
       "id": "D12",
       "category": "ASR",
       "name": "q3 real-time factor",
       "status": "pass",
-      "evidence": "RTF=0.03481098721784063",
+      "evidence": "RTF=0.023116671199347294",
       "duration_ms": 0,
-      "at": "2026-11-11T10:03:52+00:00"
+      "at": "2026-11-11T11:06:32+00:00"
     },
     {
       "id": "D13",
       "category": "ASR",
       "name": "Long audio real-time factor",
       "status": "pass",
-      "evidence": "RTF=0.02422028659735881",
+      "evidence": "RTF=0.022646810901938746",
       "duration_ms": 0,
-      "at": "2026-11-11T10:03:52+00:00"
+      "at": "2026-11-11T11:06:32+00:00"
     },
     {
       "id": "D14",
       "category": "ASR",
       "name": "q3 latency",
       "status": "pass",
-      "evidence": "elapsedMs=128",
+      "evidence": "elapsedMs=85",
       "duration_ms": 0,
-      "at": "2026-11-11T10:03:52+00:00"
+      "at": "2026-11-11T11:06:32+00:00"
     },
     {
       "id": "D16",
@@ -750,17 +750,17 @@
       "name": "Empty audio is handled",
       "status": "pass",
       "evidence": "{'ok': True, 'text': '', 'elapsedMs': 0, 'audioMs': 0, 'mode': 'empty'}",
-      "duration_ms": 129,
-      "at": "2026-11-11T10:03:52+00:00"
+      "duration_ms": 83,
+      "at": "2026-11-11T11:06:32+00:00"
     },
     {
       "id": "D17",
       "category": "ASR",
       "name": "Very short audio is handled",
       "status": "pass",
-      "evidence": "{'ok': True, 'text': '', 'elapsedMs': 27, 'audioMs': 100, 'mode': 'short'}",
-      "duration_ms": 165,
-      "at": "2026-11-11T10:03:52+00:00"
+      "evidence": "{'ok': True, 'text': '', 'elapsedMs': 18, 'audioMs': 100, 'mode': 'short'}",
+      "duration_ms": 134,
+      "at": "2026-11-11T11:06:32+00:00"
     },
     {
       "id": "D18",
@@ -768,8 +768,8 @@
       "name": "AudioRecord captures 16 kHz samples",
       "status": "pass",
       "evidence": "sampleCount=48000",
-      "duration_ms": 3354,
-      "at": "2026-11-11T10:03:55+00:00"
+      "duration_ms": 3395,
+      "at": "2026-11-11T11:06:36+00:00"
     },
     {
       "id": "D19",
@@ -777,8 +777,8 @@
       "name": "AudioRecord captures non-silence",
       "status": "pass",
       "evidence": "loopback peak=1.0 samples=48000 attempts=1",
-      "duration_ms": 3330,
-      "at": "2026-11-11T10:03:59+00:00"
+      "duration_ms": 3351,
+      "at": "2026-11-11T11:06:39+00:00"
     },
     {
       "id": "D20",
@@ -786,17 +786,17 @@
       "name": "Mic key starts recording",
       "status": "pass",
       "evidence": "voiceMode=True recording=True",
-      "duration_ms": 5342,
-      "at": "2026-11-11T10:04:04+00:00"
+      "duration_ms": 5313,
+      "at": "2026-11-11T11:06:44+00:00"
     },
     {
       "id": "D21",
       "category": "ASR",
       "name": "Mic key stops recording",
       "status": "pass",
-      "evidence": "state={'voiceMode': False, 'recording': False, 'processing': False, 'clipboardMode': False, 'suggestions': True, 'micEnabled': True, 'page': 'LETTERS', 'shift': 'ON', 'width': 1080, 'height': 819, 'bottomInset': 63, 'numberRow': False, 'alternatePopup': False, 'alternateSelected': -1, 'cursorMode': False, 'viewAccent': '#0C7C5B', 'viewBackground': '#EEF1F6', 'viewNumberRow': False, 'numericOnly': False, 'status': 'Tap the mic and speak', 'theme': 'system', 'accent': 'mint', 'numericPad': True, 'haptics': True, 'emojiRecents': ['\ud83d\ude80'], 'sound': True, 'hapticEvents': 4, 'soundEvents': 4, 'palette': {'background': '#EEF1F6', 'key': '#FFFFFF', 'text': '#0F172A', 'hint': '#5B6B80', 'accent': '#0C7C5B', 'onAccent': '#FFFFFF', 'suggestionBg': '#FFFFFF', 'suggestionText': '#475569', 'border': '#E2E8F0'}, 'modelReady': True, 'passwordField': False, 'editorInputType': 147457, 'transcribing': False, 'autocorrect': True, 'autoCorrectAllowed': True, 'autoCap': True, 'correctionsApplied': 0, 'suggestionsCommitted': 0, 'dictSize': 43230}",
-      "duration_ms": 8752,
-      "at": "2026-11-11T10:04:13+00:00"
+      "evidence": "state={'voiceMode': False, 'recording': False, 'processing': False, 'clipboardMode': False, 'suggestions': True, 'micEnabled': True, 'page': 'LETTERS', 'shift': 'ON', 'width': 1080, 'height': 819, 'bottomInset': 63, 'numberRow': False, 'alternatePopup': False, 'alternateSelected': -1, 'cursorMode': False, 'viewAccent': '#0C7C5B', 'viewBackground': '#EEF1F6', 'viewNumberRow': False, 'numericOnly': False, 'status': 'Tap the mic and speak', 'theme': 'system', 'accent': 'mint', 'numericPad': True, 'haptics': True, 'emojiRecents': ['\ud83d\ude80'], 'sound': True, 'hapticEvents': 4, 'soundEvents': 4, 'palette': {'background': '#EEF1F6', 'key': '#FFFFFF', 'text': '#0F172A', 'hint': '#5B6B80', 'accent': '#0C7C5B', 'onAccent': '#FFFFFF', 'suggestionBg': '#FFFFFF', 'suggestionText': '#475569', 'border': '#E2E8F0'}, 'modelReady': True, 'passwordField': False, 'numericField': False, 'editorInputType': 147457, 'transcribing': False, 'autocorrect': True, 'autoCorrectAllowed': True, 'autoCap': True, 'correctionsApplied': 0, 'suggestionsCommitted': 0, 'dictSize': 43230}",
+      "duration_ms": 8780,
+      "at": "2026-11-11T11:06:53+00:00"
     },
     {
       "id": "D22",
@@ -804,8 +804,8 @@
       "name": "Dictation inserts text",
       "status": "pass",
       "evidence": "text='Parakey is a private voice keyboard that runs entirely on this phone.'",
-      "duration_ms": 5175,
-      "at": "2026-11-11T10:04:18+00:00"
+      "duration_ms": 5128,
+      "at": "2026-11-11T11:06:58+00:00"
     },
     {
       "id": "D23",
@@ -813,8 +813,8 @@
       "name": "Dictation inserts at the cursor",
       "status": "pass",
       "evidence": "text='Hello Parakey is a private voice keyboard that runs entirely on this phone. world'",
-      "duration_ms": 5649,
-      "at": "2026-11-11T10:04:23+00:00"
+      "duration_ms": 5738,
+      "at": "2026-11-11T11:07:04+00:00"
     },
     {
       "id": "D24",
@@ -822,8 +822,8 @@
       "name": "Dictation adds one leading space",
       "status": "pass",
       "evidence": "text='Hello Parakey is a private voice keyboard that runs entirely on this phone.'",
-      "duration_ms": 5415,
-      "at": "2026-11-11T10:04:29+00:00"
+      "duration_ms": 5458,
+      "at": "2026-11-11T11:07:09+00:00"
     },
     {
       "id": "D25",
@@ -831,8 +831,8 @@
       "name": "Undo removes dictated text",
       "status": "pass",
       "evidence": "after undo text=''",
-      "duration_ms": 6751,
-      "at": "2026-11-11T10:04:36+00:00"
+      "duration_ms": 6726,
+      "at": "2026-11-11T11:07:16+00:00"
     },
     {
       "id": "R01",
@@ -840,8 +840,8 @@
       "name": "Compose a message with dictation",
       "status": "pass",
       "evidence": "text='Hello Parakey is a private voice keyboard that runs entirely on this phone.Thanks'",
-      "duration_ms": 5300,
-      "at": "2026-11-11T10:04:41+00:00"
+      "duration_ms": 5259,
+      "at": "2026-11-11T11:07:21+00:00"
     },
     {
       "id": "R02",
@@ -849,8 +849,8 @@
       "name": "Fill a contact form with the keyboard",
       "status": "pass",
       "evidence": "name='Jordan' email='jordan@parakey.dev'",
-      "duration_ms": 24776,
-      "at": "2026-11-11T10:05:06+00:00"
+      "duration_ms": 24585,
+      "at": "2026-11-11T11:07:46+00:00"
     },
     {
       "id": "R03",
@@ -858,8 +858,8 @@
       "name": "Password field masks and blocks voice",
       "status": "pass",
       "evidence": "passwordAttr=true text='\u2022\u2022\u2022\u2022\u2022\u2022' micEnabled=False",
-      "duration_ms": 14148,
-      "at": "2026-11-11T10:05:20+00:00"
+      "duration_ms": 14122,
+      "at": "2026-11-11T11:08:00+00:00"
     },
     {
       "id": "R04",
@@ -867,8 +867,8 @@
       "name": "Clear-all button clears the form",
       "status": "pass",
       "evidence": "before=['TestName', 'test@example.com', 'Hello'] after=['', '', '', '']",
-      "duration_ms": 44922,
-      "at": "2026-11-11T10:06:05+00:00"
+      "duration_ms": 44087,
+      "at": "2026-11-11T11:08:44+00:00"
     },
     {
       "id": "R06",
@@ -876,8 +876,8 @@
       "name": "Clipboard copy and paste work",
       "status": "pass",
       "evidence": "first='FIRST_CLIP' second='COPY_SELECTION'",
-      "duration_ms": 11101,
-      "at": "2026-11-11T10:06:16+00:00"
+      "duration_ms": 11037,
+      "at": "2026-11-11T11:08:55+00:00"
     },
     {
       "id": "R07",
@@ -885,17 +885,17 @@
       "name": "Setup status shows ready and selected",
       "status": "pass",
       "evidence": "setup shows model READY and keyboard ENABLED/SELECTED",
-      "duration_ms": 8501,
-      "at": "2026-11-11T10:06:24+00:00"
+      "duration_ms": 8619,
+      "at": "2026-11-11T11:09:04+00:00"
     },
     {
       "id": "R09",
       "category": "Real life",
       "name": "Random-tap monkey run is crash-free",
       "status": "pass",
-      "evidence": "pid=10320 crash=False",
-      "duration_ms": 14069,
-      "at": "2026-11-11T10:06:38+00:00"
+      "evidence": "pid=31290 crash=False",
+      "duration_ms": 14093,
+      "at": "2026-11-11T11:09:18+00:00"
     },
     {
       "id": "R10",
@@ -903,8 +903,8 @@
       "name": "Relaunch keeps IME and model ready",
       "status": "pass",
       "evidence": "default=com.parakey.keyboard/.ParakeyImeService modelReady=True shown=True",
-      "duration_ms": 11025,
-      "at": "2026-11-11T10:06:49+00:00"
+      "duration_ms": 10910,
+      "at": "2026-11-11T11:09:29+00:00"
     },
     {
       "id": "R12",
@@ -912,8 +912,8 @@
       "name": "Zero app crashes in the full suite",
       "status": "pass",
       "evidence": "no FATAL EXCEPTION from com.parakey.keyboard",
-      "duration_ms": 25,
-      "at": "2026-11-11T10:06:49+00:00"
+      "duration_ms": 28,
+      "at": "2026-11-11T11:09:29+00:00"
     },
     {
       "id": "R11",
@@ -922,7 +922,7 @@
       "status": "fail",
       "evidence": "PENDING: no physical phone. Connect the Moto G85 with USB debugging (or wireless ADB) and rerun scripts/verify.py.",
       "duration_ms": 0,
-      "at": "2026-11-11T10:06:49+00:00"
+      "at": "2026-11-11T11:09:29+00:00"
     }
   ]
 }

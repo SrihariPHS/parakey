@@ -2,6 +2,7 @@ package com.parakey.keyboard
 
 import com.parakey.keyboard.text.SuggestionEngine
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -11,6 +12,7 @@ class SuggestionEngineTest {
     fun commonTamposAndExpansionsCorrect() {
         assertEquals("the", SuggestionEngine.correct("teh"))
         assertEquals("receive", SuggestionEngine.correct("recieve"))
+        assertEquals("necessary", SuggestionEngine.correct("neccessary", allowTwoEdit = true))
         assertEquals("by the way", SuggestionEngine.correct("btw"))
         assertEquals("I don't know", SuggestionEngine.correct("idk"))
     }
@@ -30,10 +32,31 @@ class SuggestionEngineTest {
     }
 
     @Test
+    fun unseenTranspositionsAndNamesAreHandled() {
+        assertTrue(SuggestionEngine.oneEditAwayForTest("goign", "going"))
+        assertTrue(SuggestionEngine.oneEditAwayForTest("teh", "the"))
+        assertFalse(SuggestionEngine.oneEditAwayForTest("params", "prayer"))
+        assertFalse(SuggestionEngine.oneEditAwayForTest("nginx", "night"))
+        assertFalse(SuggestionEngine.oneEditAwayForTest("retries", "retired"))
+        assertEquals(null, SuggestionEngine.correct("params", allowTwoEdit = true))
+        assertEquals(null, SuggestionEngine.correct("Priya", allowTwoEdit = true))
+        assertEquals(null, SuggestionEngine.correct("nginx", allowTwoEdit = true))
+        assertEquals(null, SuggestionEngine.correct("Priya"))
+        assertEquals(null, SuggestionEngine.correct("ID"))
+    }
+
+    @Test
+    fun twoEditPassFindsLongerCommonWords() {
+        assertEquals("necessary", SuggestionEngine.correct("neccessary", allowTwoEdit = true))
+        assertEquals("receive", SuggestionEngine.correct("recieve", allowTwoEdit = true))
+    }
+
+    @Test
     fun textExpansionsAreConvenienceNotAggressiveRewrites() {
         assertEquals("by the way", SuggestionEngine.correct("btw"))
         assertEquals("on my way", SuggestionEngine.correct("omw"))
         assertEquals(null, SuggestionEngine.correct("ok"))
         assertEquals(null, SuggestionEngine.correct("lol"))
+        assertEquals(null, SuggestionEngine.correct("id"))
     }
 }

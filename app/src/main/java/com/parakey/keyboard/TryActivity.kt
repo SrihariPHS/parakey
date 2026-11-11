@@ -64,6 +64,7 @@ class TryActivity : android.app.Activity() {
         }
         setTheme(if (night) R.style.Theme_Parakey_Dark else R.style.Theme_Parakey)
         super.onCreate(savedInstanceState)
+        instance = this
         val accent = KeyboardTheme.accentPalette(settings.accent, night)
         val amoled = night && settings.theme == "amoled"
         colors = if (night) {
@@ -139,10 +140,11 @@ class TryActivity : android.app.Activity() {
             "pin" -> pin
             else -> return false
         }
-        field.requestFocus()
-        field.setSelection(field.text.length)
         field.post {
             field.requestRectangleOnScreen(Rect(0, 0, field.width, field.height), true)
+            field.requestFocus()
+            field.setSelection(field.text.length)
+            getSystemService(InputMethodManager::class.java)?.showSoftInput(field, InputMethodManager.SHOW_IMPLICIT)
         }
         getSystemService(InputMethodManager::class.java)?.showSoftInput(field, InputMethodManager.SHOW_IMPLICIT)
         return true

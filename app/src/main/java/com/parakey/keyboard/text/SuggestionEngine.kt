@@ -32,6 +32,16 @@ object SuggestionEngine {
         "work", "first", "well", "way", "even", "new", "want", "because",
         "any", "these", "give", "day", "most", "us", "hello", "help", "thanks",
         "please", "message", "keyboard", "phone", "name", "test", "voice",
+        "going", "want", "need", "today", "tomorrow",
+    )
+
+    // Common technical terms, product names and names that are not in the
+    // AOSP list but should never be "corrected" into an unrelated word.
+    private val protectedWords = setOf(
+        "params", "nginx", "retries", "grafana", "biryani", "parakey",
+        "priya", "jordan", "srihari", "kotlin", "gradle", "android",
+        "github", "docker", "kubernetes", "postgres", "sqlite", "json",
+        "api", "url", "uuid", "http", "https",
     )
 
     private val typoMap = mapOf(
@@ -48,7 +58,7 @@ object SuggestionEngine {
         "mightve" to "might've", "couldve" to "could've", "shouldve" to "should've",
         "wouldve" to "would've", "mustve" to "must've", "mightnt" to "mightn't",
         "youve" to "you've", "weve" to "we've", "theyve" to "they've",
-        "ive" to "I've", "im" to "I'm", "id" to "I'd", "youll" to "you'll",
+        "ive" to "I've", "im" to "I'm", "youll" to "you'll",
         "theyll" to "they'll", "youd" to "you'd", "thats" to "that's",
         "whats" to "what's", "hows" to "how's", "wheres" to "where's",
         "heres" to "here's", "theres" to "there's", "arent" to "aren't",
@@ -60,7 +70,7 @@ object SuggestionEngine {
         "embarass" to "embarrass", "occassion" to "occasion",
         "tommorow" to "tomorrow", "wich" to "which", "becouse" to "because",
         "thnak" to "thank", "pls" to "please", "plz" to "please",
-        "msg" to "message", "yall" to "y'all", "aint" to "ain't",
+        "yall" to "y'all", "aint" to "ain't",
         "btw" to "by the way", "idk" to "I don't know", "omw" to "on my way",
         "lmk" to "let me know", "imo" to "in my opinion", "tbh" to "to be honest",
         "brb" to "be right back", "gtg" to "got to go", "smh" to "shaking my head",
@@ -71,14 +81,11 @@ object SuggestionEngine {
         "you" to listOf("can", "are", "have", "will", "should"),
         "we" to listOf("will", "can", "are", "have", "should"),
         "they" to listOf("are", "will", "have", "can", "were"),
-        "the" to listOf("best", "same", "first", "last", "next"),
         "thank" to listOf("you"),
         "thanks" to listOf("for", "again"),
-        "good" to listOf("morning", "night", "luck", "job"),
         "how" to listOf("are", "is", "do"),
         "what" to listOf("is", "are", "do"),
         "where" to listOf("are", "is"),
-        "see" to listOf("you"),
         "talk" to listOf("to", "soon"),
         "on" to listOf("the", "my", "a"),
         "at" to listOf("the", "home", "work"),
@@ -120,7 +127,7 @@ object SuggestionEngine {
         "meet" to listOf("you", "at", "up"),
         "on" to listOf("the", "my", "a", "your"),
         "at" to listOf("the", "home", "work", "least"),
-        "in" to listOf("the", "a", "my", "a"),
+        "in" to listOf("the", "a", "my"),
         "with" to listOf("you", "me", "the"),
         "about" to listOf("it", "the", "you"),
         "from" to listOf("the", "my", "you"),
@@ -206,11 +213,19 @@ object SuggestionEngine {
         return next.map { if (it == "i") "I" else it }.take(MAX_SUGGESTIONS)
     }
 
-    fun correct(word: String, personalWords: Collection<String> = emptyList()): String? {
+    fun correct(
+        word: String,
+        personalWords: Collection<String> = emptyList(),
+        allowTwoEdit: Boolean = false,
+    ): String? {
         if (word.equals("i", ignoreCase = true) && word == "i") return "I"
         if (word.length < 2) return null
         if (word.any { it.isDigit() || it == '@' || it == '/' || it == ':' || it == '_' }) return null
         val lower = word.lowercase()
+        // Names, acronyms and identifiers must never be rewritten, even if they
+        // collide with an expansion entry.
+        if (word.drop(1).any { it.isUpperCase() }) return null
+        if (lower in protectedWords) return null
         // Common misspellings and contractions are checked before the known set.
         typoMap[lower]?.let { return matchCase(word, it) }
         if (known.contains(lower) || personalWords.any { it.equals(word, ignoreCase = true) }) {
@@ -236,13 +251,23 @@ object SuggestionEngine {
             }
         }
         if (best != null) return matchCase(word, best)
-        if (lower.length < 5) return null
+        // The two-edit pass is deliberately limited to the space/punctuation
+        // commit path. Running it for every typed prefix would scan the whole
+        // 43k dictionary on the UI thread for no visible benefit.
+        if (!allowTwoEdit || lower.length < 5) return null
+        // Never rewrite a capitalised token as a two-edit guess: names and
+        // products are the usual victims (Priya -> Prior, Nginx -> Nine).
+        if (word.firstOrNull()?.isUpperCase() == true) return null
         for (candidate in dictionary) {
             if (candidate.first() != first) continue
             if (kotlin.math.abs(candidate.length - lower.length) > 1) continue
             val candidateRank = rank[candidate] ?: Int.MAX_VALUE
             if (candidateRank > MAX_RANK_FOR_TWO_EDIT) continue
             if (!twoEditsAway(lower, candidate)) continue
+            // Require a close length and a matching first letter, already true;
+            // additionally prefer candidates that share the final letter so a
+            // plural does not collapse into an unrelated word (params -> parts).
+            if (candidate.last() != lower.last()) continue
             if (candidateRank < bestRank) {
                 bestRank = candidateRank
                 best = candidate
@@ -255,6 +280,7 @@ object SuggestionEngine {
     private fun twoEditsAway(a: String, b: String): Boolean {
         if (a == b) return false
         if (kotlin.math.abs(a.length - b.length) > 2) return false
+        var prev2 = IntArray(b.length + 1)
         var previous = IntArray(b.length + 1) { it }
         for (i in a.indices) {
             val current = IntArray(b.length + 1)
@@ -267,12 +293,13 @@ object SuggestionEngine {
                     previous[j] + cost,
                 )
                 if (i > 0 && j > 0 && a[i] == b[j - 1] && a[i - 1] == b[j]) {
-                    current[j + 1] = minOf(current[j + 1], previous[j - 1] + 1)
+                    current[j + 1] = minOf(current[j + 1], prev2[j - 1] + 1)
                 }
             }
+            prev2 = previous
             previous = current
         }
-        return previous[b.length] in 2..2
+        return previous[b.length] == 2
     }
 
     fun isKnown(word: String, personalWords: Collection<String> = emptyList()): Boolean {
@@ -281,20 +308,22 @@ object SuggestionEngine {
         return known.contains(lower) || personalWords.any { it.equals(word, ignoreCase = true) }
     }
 
+    internal fun oneEditAwayForTest(a: String, b: String): Boolean = oneEditAway(a, b)
+
+    internal fun twoEditsAwayForTest(a: String, b: String): Boolean = twoEditsAway(a, b)
+
     /** True for one substitution, insertion, deletion or adjacent transposition. */
     private fun oneEditAway(a: String, b: String): Boolean {
         if (a == b) return false
         if (a.length == b.length) {
-            var mismatch = -1
-            for (i in a.indices) {
-                if (a[i] != b[i]) {
-                    if (mismatch >= 0) {
-                        return i == mismatch + 1 && a[mismatch] == b[i] && a[i] == b[mismatch]
-                    }
-                    mismatch = i
-                }
-            }
-            return mismatch >= 0
+            var i = 0
+            while (i < a.length && a[i] == b[i]) i++
+            if (i == a.length) return false
+            // One substitution: everything after the mismatch must match.
+            if (i + 1 >= a.length || a.regionMatches(i + 1, b, i + 1, a.length - i - 1)) return true
+            // One adjacent transposition: swap the pair and compare the rest.
+            return a[i] == b[i + 1] && a[i + 1] == b[i] &&
+                a.regionMatches(i + 2, b, i + 2, a.length - i - 2)
         }
         val shorter = if (a.length < b.length) a else b
         val longer = if (a.length < b.length) b else a

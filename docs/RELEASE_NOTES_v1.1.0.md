@@ -1,4 +1,4 @@
-# Parakey 1.1.0 — number pad, smarter typing and zoom-free number row
+# Parakey 1.1.1 — number pad, smarter typing and zoom-free number row
 
 This release keeps the verified typing and voice baseline and adds a functional
 round: a dedicated numeric keypad, a slimmer and clearly distinct number strip,
@@ -47,8 +47,9 @@ behaviour: System theme, mint accent, number row off, sound and haptics on.
 ## Verification
 
 - 100 checks: the previous 99 automated checks plus the physical Moto G85 gate.
-- Seven weak checks were replaced with seven real feature checks, so the suite
-  still totals exactly 100:
+- v1.0.2 replaced seven weak checks with seven real feature checks. v1.1.0
+  added N03 for the number pad and retired K13 as redundant with N02. The
+  suite still totals exactly 100:
   - T01 all 20 palettes meet contrast targets
   - T02 theme/accent survive relaunch
   - N01 number row adds one fitted row and stays under 1500 px
@@ -66,18 +67,22 @@ behaviour: System theme, mint accent, number row off, sound and haptics on.
 Android 8.0+ (API 26), arm64-v8a. The Moto G85 (Android 16) remains the physical
 reference device. No new permissions, dependencies or network calls.
 
-## 1.1.0 additions
+## 1.1.1 additions
 
-- **Number-only pad** for `TYPE_CLASS_NUMBER` fields (PIN, phone, quantity):
-  a large 3×4 keypad with backspace and enter, no letters, no word suggestions,
-  and voice typing disabled. Toggle it off to keep the letter keyboard in
-  number fields.
-- **Number strip redesign:** the optional 1–0 row is now 62% of a normal row,
-  separated by a hairline divider, drawn without the raised-key shadow and in
-  the hint colour. It reads as a utility strip, not as more letter keys.
+- **Number-only pad** for `TYPE_CLASS_NUMBER` and `TYPE_CLASS_PHONE` fields:
+  a large 3×4 keypad with backspace, enter and an ABC escape, decimal and minus
+  keys when the field asks for them, no letters, no word suggestions, no
+  long-press symbols, and voice typing disabled. Toggle it off to keep the
+  letter keyboard in number fields.
+- **Number strip redesign:** the optional 1–0 row is now one flat 62%-height
+  strip, drawn without individual raised-key shadows. It reads as a utility
+  strip, not as more letter keys.
 - **Typing improvements:** a second, conservative two-edit autocorrect pass for
   longer words, more common misspellings, text-expansion shortcuts
   (`btw`, `idk`, `omw`, `lmk`, `tbh`, `brb`, `gtg`), and a much larger next-word
   table.
 - **Smart punctuation:** a double quote becomes “ or ” based on context.
+- **Guard rails:** two-edit correction never rewrites capitalised names, and a
+  protected list covers common technical terms (`params`, `nginx`, `retries`,
+  `Priya`). Long-press is not offered on the numeric pad.
 - The number strip and number pad default to on; the strip is off. Verified by N01, N02, N03 and K24.
