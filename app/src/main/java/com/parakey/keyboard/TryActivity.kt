@@ -49,6 +49,7 @@ class TryActivity : android.app.Activity() {
     private lateinit var name: EditText
     private lateinit var email: EditText
     private lateinit var password: EditText
+    private lateinit var pin: EditText
     private lateinit var status: TextView
     private lateinit var scroll: ScrollView
     private lateinit var clearButton: TextView
@@ -135,6 +136,7 @@ class TryActivity : android.app.Activity() {
             "name" -> name
             "email" -> email
             "password" -> password
+            "pin" -> pin
             else -> return false
         }
         field.requestFocus()
@@ -239,6 +241,22 @@ class TryActivity : android.app.Activity() {
             10.5f,
             colors.muted,
         ).apply { setPadding(0, dp(7), 0, 0) })
+        passwordCard.addView(fieldLabel("PIN / number field", top = 12))
+        pin = field(
+            id = R.id.field_pin,
+            hint = "4-digit PIN",
+            inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_VARIATION_PASSWORD,
+            minLines = 1,
+            singleLine = true,
+        )
+        pin.contentDescription = "PIN field"
+        pin.imeOptions = android.view.inputmethod.EditorInfo.IME_ACTION_DONE
+        passwordCard.addView(pin)
+        passwordCard.addView(text(
+            "Number fields get a dedicated 3×4 numeric pad and never show word suggestions.",
+            10.5f,
+            colors.muted,
+        ).apply { setPadding(0, dp(7), 0, 0) })
         content.addView(passwordCard)
 
         content.addView(section("Contact form"))
@@ -286,6 +304,7 @@ class TryActivity : android.app.Activity() {
                 name.setText("")
                 email.setText("")
                 password.setText("")
+                pin.setText("")
                 focusField(message)
             }
         }
@@ -297,6 +316,7 @@ class TryActivity : android.app.Activity() {
         val which = intent?.getStringExtra("focus") ?: "message"
         val field = when (which) {
             "password" -> password
+            "pin" -> pin
             "name" -> name
             "email" -> email
             else -> message

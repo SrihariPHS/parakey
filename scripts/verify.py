@@ -1328,8 +1328,18 @@ def build_checks(h: Harness) -> None:
         return h.field_text("field_message") == "1", f"text={h.field_text('field_message')!r}"
 
     def k_abc():
-        k_reset(); h.tap_key("?123"); h.tap_key("ABC"); h.tap_key("q")
-        return h.field_text("field_message").startswith("q"), f"text={h.field_text('field_message')!r}"
+        h.debug("force_numeric", enabled=False)
+        k_reset()
+        for _ in range(3):
+            h.tap_key("?123")
+            h.wait(lambda: h.state(refresh=True).get("page") == "SYMBOLS", 3, description="symbols page")
+            h.tap_key("ABC")
+            h.wait(lambda: h.state(refresh=True).get("page") == "LETTERS", 3, description="letters page")
+            h.tap_key("q")
+            text = h.field_text("field_message")
+            if text.startswith("q"):
+                return True, f"text={text!r}"
+        return False, f"text={h.field_text('field_message')!r}"
 
     def k_more():
         k_reset(); h.tap_key("?123"); h.tap_key("=\\<")
@@ -1499,7 +1509,6 @@ def build_checks(h: Harness) -> None:
     h.check("K09", "Keyboard", "Enter inserts a newline", k_enter)
     h.check("K10", "Keyboard", "Shift toggles case", k_shift)
     h.check("K11", "Keyboard", "Double-shift caps lock", k_caps)
-    h.check("K13", "Keyboard", "Digit key inserts a digit", k_one)
     h.check("K14", "Keyboard", "ABC returns to letters", k_abc)
     h.check("K17", "Keyboard", "Emoji inserts and appears in recents", k_emoji_insert)
     h.check("K18", "Keyboard", "Key-gap taps hit the nearest key", k_gap)
@@ -1585,12 +1594,19 @@ def build_checks(h: Harness) -> None:
         time.sleep(0.4)
         uncorrected = h.field_text("field_message")
         h.debug("autocorrect", enabled=True)
-        ok = (hits == len(typo_cases) and valid_kept == len(valid_cases) and
+        h.clear_field()
+        h.set_shift_off()
+        h.reset_page()
+        h.type_char('"')
+        time.sleep(0.3)
+        quote = h.field_text("field_message")
+        h.reset_page()
+        ok = (hits == len(typo_cases) and valid_kept == len(valid_cases) and quote == "\u201C" and
               corrected == "the " and contraction == "might've " and
               double_space == "q. " and uncorrected == "teh " and int(after) > before)
         return ok, (f"typos={hits}/{len(typo_cases)} valid={valid_kept}/{len(valid_cases)} "
                     f"on={corrected!r} contraction={contraction!r} doubleSpace={double_space!r} "
-                    f"off={uncorrected!r} counter={before}->{after} failures={failures}")
+                    f"off={uncorrected!r} smartQuote={quote!r} counter={before}->{after} failures={failures}")
 
     h.check("K24", "Keyboard", "Dictionary autocorrect fires and can be disabled", k_autocorrect)
 
@@ -1683,15 +1699,17 @@ def build_checks(h: Harness) -> None:
             and len(km["keys"]) == len(base["keys"]) + 10
             and len(digits) == 10
             and height > base_height
+            and 30 <= height - base_height <= 170
             and 600 <= height <= 1500
             and len(ys) == 5
+            and all(k.get("numberRow") is True for k in km["keys"] if k.get("label") and k.get("label") in "1234567890")
             and not bad
         )
         h.debug("number_row", enabled=False)
         time.sleep(0.4)
         h.refresh_screen()
         h.refresh_ime_frame()
-        return ok, f"keys {len(base['keys'])}->{len(km['keys'])} digits={len(digits)} height={base_height}->{height} rows={len(ys)} bad={len(bad)}"
+        return ok, f"keys {len(base['keys'])}->{len(km['keys'])} digits={len(digits)} height={base_height}->{height} delta={height - base_height} rows={len(ys)} bad={len(bad)}"
 
     def n_digits():
         h.ensure_keyboard()
@@ -1838,6 +1856,37 @@ def build_checks(h: Harness) -> None:
         h.debug("feedback", haptics=True, sound=True)
         return ok, f"off={off.get('hapticEvents')}/{off.get('soundEvents')} on={on.get('hapticEvents')}/{on.get('soundEvents')}"
 
+    def n_pin_pad():
+        h.debug("numeric_pad", enabled=True)
+        # A real field change: restart into the PIN field so the IME gets a
+        # fresh EditorInfo with TYPE_CLASS_NUMBER.
+        h.launch_clean(TRY, focus="pin")
+        time.sleep(1.2)
+        km = h.keymap(refresh=True)
+        state = h.state(refresh=True)
+        labels = [k.get("label") for k in km["keys"]]
+        page = state.get("page")
+        has_letters = any(label and len(label) == 1 and label.isalpha() for label in labels)
+        h.clear_field()
+        for digit in "1234":
+            h.tap_key(digit)
+        time.sleep(0.3)
+        text = h.field_text("field_message")
+        ok = (
+            page == "NUMBER"
+            and labels[:9] == ["1", "2", "3", "4", "5", "6", "7", "8", "9"]
+            and not has_letters
+            and any(k.get("action") == "BACKSPACE" for k in km["keys"])
+            and any(k.get("action") == "ENTER" for k in km["keys"])
+            and text == "1234"
+            and state.get("numericOnly") is True
+        )
+        h.debug("numeric_pad", enabled=True)
+        h.launch_clean(TRY, focus="message")
+        time.sleep(0.6)
+        return ok, f"page={page} numericOnly={state.get('numericOnly')} labels={labels[:9]} text={text!r} letters={has_letters}"
+
+    h.check("N03", "Number row", "PIN fields get a 3x4 numeric pad", n_pin_pad)
     h.check("T01", "Themes", "All 20 theme/accent palettes meet contrast targets", t_contrast)
     h.check("T02", "Themes", "Theme and accent survive an IME relaunch", t_persist)
     h.check("N01", "Number row", "Number row adds one fitted row and height stays sane", n_geometry)

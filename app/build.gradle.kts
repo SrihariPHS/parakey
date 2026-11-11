@@ -21,8 +21,8 @@ android {
         applicationId = "com.parakey.keyboard"
         minSdk = 26
         targetSdk = 35
-        versionCode = 4
-        versionName = "1.0.3"
+        versionCode = 5
+        versionName = "1.1.0"
 
         buildConfigField("String", "MODEL_URL", "\"$modelUrl\"")
         buildConfigField("String", "TOKENS_URL", "\"$tokensUrl\"")

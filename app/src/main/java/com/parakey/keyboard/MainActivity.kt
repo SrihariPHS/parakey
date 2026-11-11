@@ -534,10 +534,23 @@ class MainActivity : android.app.Activity() {
         ) { settings.autoCapitalizeEnabled = it })
         card.addView(toggleRow(
             "Number row",
-            "Always show 1–0 above the letters",
+            "A slim 1–0 strip above the letters",
             settings.numberRowEnabled,
         ) {
             settings.numberRowEnabled = it
+            ParakeyImeService.instance?.applyAppearance()
+        })
+        card.addView(toggleRow(
+            "Smart punctuation",
+            "Curly quotes when you type a double quote",
+            settings.smartPunctuation,
+        ) { settings.smartPunctuation = it })
+        card.addView(toggleRow(
+            "Number-only pad",
+            "Use a big 3×4 keypad for PIN, phone and number fields",
+            settings.numericPadEnabled,
+        ) {
+            settings.numericPadEnabled = it
             ParakeyImeService.instance?.applyAppearance()
         })
         card.addView(toggleRow(

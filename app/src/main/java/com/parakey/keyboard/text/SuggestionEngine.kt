@@ -16,6 +16,7 @@ import com.parakey.keyboard.R
 object SuggestionEngine {
 
     private const val MAX_RANK_FOR_CORRECTION = 6_000
+    private const val MAX_RANK_FOR_TWO_EDIT = 1_500
     private const val MAX_SUGGESTIONS = 3
 
     private val fallbackWords = listOf(
@@ -55,6 +56,14 @@ object SuggestionEngine {
         "hadnt" to "hadn't", "mustnt" to "mustn't", "neednt" to "needn't",
         "liek" to "like", "adn" to "and", "taht" to "that", "jsut" to "just",
         "becasue" to "because", "whta" to "what", "yuo" to "you",
+        "neccessary" to "necessary", "accomodate" to "accommodate",
+        "embarass" to "embarrass", "occassion" to "occasion",
+        "tommorow" to "tomorrow", "wich" to "which", "becouse" to "because",
+        "thnak" to "thank", "pls" to "please", "plz" to "please",
+        "msg" to "message", "yall" to "y'all", "aint" to "ain't",
+        "btw" to "by the way", "idk" to "I don't know", "omw" to "on my way",
+        "lmk" to "let me know", "imo" to "in my opinion", "tbh" to "to be honest",
+        "brb" to "be right back", "gtg" to "got to go", "smh" to "shaking my head",
     )
 
     private val bigrams = mapOf(
@@ -85,6 +94,41 @@ object SuggestionEngine {
         "it" to listOf("is", "was", "will"),
         "my" to listOf("name", "phone", "friend"),
         "your" to listOf("name", "phone", "message"),
+        "hello" to listOf("there", "again", "everyone"),
+        "hi" to listOf("there", "how", "everyone"),
+        "hey" to listOf("there", "how", "you"),
+        "sorry" to listOf("about", "for", "I"),
+        "happy" to listOf("birthday", "new", "to"),
+        "merry" to listOf("christmas"),
+        "good" to listOf("morning", "night", "afternoon", "evening", "luck", "job"),
+        "have" to listOf("a", "you", "to", "been"),
+        "let" to listOf("me", "us", "them"),
+        "make" to listOf("sure", "it", "a"),
+        "need" to listOf("to", "a", "help"),
+        "want" to listOf("to", "a", "some"),
+        "going" to listOf("to", "out", "home"),
+        "just" to listOf("got", "wanted", "need"),
+        "not" to listOf("sure", "now", "yet"),
+        "will" to listOf("be", "do", "call"),
+        "be" to listOf("there", "back", "able"),
+        "call" to listOf("me", "you", "back"),
+        "text" to listOf("me", "you", "back"),
+        "send" to listOf("me", "it", "the"),
+        "love" to listOf("you", "it", "this"),
+        "miss" to listOf("you", "it"),
+        "see" to listOf("you", "it"),
+        "meet" to listOf("you", "at", "up"),
+        "on" to listOf("the", "my", "a", "your"),
+        "at" to listOf("the", "home", "work", "least"),
+        "in" to listOf("the", "a", "my", "a"),
+        "with" to listOf("you", "me", "the"),
+        "about" to listOf("it", "the", "you"),
+        "from" to listOf("the", "my", "you"),
+        "up" to listOf("to", "the", "with"),
+        "out" to listOf("of", "with", "for"),
+        "no" to listOf("problem", "way", "thanks"),
+        "okay" to listOf("thanks", "sure", "then"),
+        "sure" to listOf("thing", "thanks", "I"),
     )
 
     @Volatile
@@ -191,7 +235,44 @@ object SuggestionEngine {
                 best = candidate
             }
         }
+        if (best != null) return matchCase(word, best)
+        if (lower.length < 5) return null
+        for (candidate in dictionary) {
+            if (candidate.first() != first) continue
+            if (kotlin.math.abs(candidate.length - lower.length) > 1) continue
+            val candidateRank = rank[candidate] ?: Int.MAX_VALUE
+            if (candidateRank > MAX_RANK_FOR_TWO_EDIT) continue
+            if (!twoEditsAway(lower, candidate)) continue
+            if (candidateRank < bestRank) {
+                bestRank = candidateRank
+                best = candidate
+            }
+        }
         return best?.let { matchCase(word, it) }
+    }
+
+    /** True for at most two insertions, deletions, substitutions or transpositions. */
+    private fun twoEditsAway(a: String, b: String): Boolean {
+        if (a == b) return false
+        if (kotlin.math.abs(a.length - b.length) > 2) return false
+        var previous = IntArray(b.length + 1) { it }
+        for (i in a.indices) {
+            val current = IntArray(b.length + 1)
+            current[0] = i + 1
+            for (j in b.indices) {
+                val cost = if (a[i] == b[j]) 0 else 1
+                current[j + 1] = minOf(
+                    previous[j + 1] + 1,
+                    current[j] + 1,
+                    previous[j] + cost,
+                )
+                if (i > 0 && j > 0 && a[i] == b[j - 1] && a[i - 1] == b[j]) {
+                    current[j + 1] = minOf(current[j + 1], previous[j - 1] + 1)
+                }
+            }
+            previous = current
+        }
+        return previous[b.length] in 2..2
     }
 
     fun isKnown(word: String, personalWords: Collection<String> = emptyList()): Boolean {

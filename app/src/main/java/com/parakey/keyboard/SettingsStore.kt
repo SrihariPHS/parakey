@@ -24,6 +24,18 @@ class SettingsStore(context: Context) {
             prefs.edit().putBoolean("number_row", value).apply()
         }
 
+    var smartPunctuation: Boolean
+        get() = prefs.getBoolean("smart_punctuation", true)
+        set(value) {
+            prefs.edit().putBoolean("smart_punctuation", value).apply()
+        }
+
+    var numericPadEnabled: Boolean
+        get() = prefs.getBoolean("numeric_pad", true)
+        set(value) {
+            prefs.edit().putBoolean("numeric_pad", value).apply()
+        }
+
     var hapticsEnabled: Boolean
         get() = prefs.getBoolean("haptics", true)
         set(value) {

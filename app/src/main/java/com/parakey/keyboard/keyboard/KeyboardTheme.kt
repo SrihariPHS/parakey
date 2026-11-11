@@ -33,6 +33,7 @@ data class KeyboardDimens(
     val letterSize: Float = 22f,
     val specialSize: Float = 12.5f,
     val emojiSize: Float = 24f,
+    val numberSize: Float = 15f,
     val micRadius: Float = 17f,
     val gearRadius: Float = 17f,
     val voiceMicRadius: Float = 46f,

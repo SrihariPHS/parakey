@@ -34,6 +34,7 @@ data class Key(
     val weight: Float = 1f,
     val special: Boolean = false,
     val accent: Boolean = false,
+    val numberRow: Boolean = false,
     val id: String = "",
 ) {
     val stableId: String
@@ -43,13 +44,15 @@ data class Key(
 data class KeyRow(
     val keys: List<Key>,
     val sideInset: Float = 0f,
+    /** Row height relative to a normal key row. The number row is shorter. */
+    val heightFactor: Float = 1f,
 )
 
 data class KeyboardSpec(
     val rows: List<KeyRow>,
 )
 
-enum class KeyboardPage { LETTERS, SYMBOLS, MORE_SYMBOLS, EMOJI }
+enum class KeyboardPage { LETTERS, SYMBOLS, MORE_SYMBOLS, EMOJI, NUMBER }
 
 enum class ShiftState { OFF, ON, CAPS }
 
@@ -64,6 +67,7 @@ object KeyboardLayouts {
         KeyboardPage.SYMBOLS -> symbols()
         KeyboardPage.MORE_SYMBOLS -> moreSymbols()
         KeyboardPage.EMOJI -> emoji(emojiRecents)
+        KeyboardPage.NUMBER -> numberPad()
     }
 
     fun displayLabel(key: Key, page: KeyboardPage, shift: ShiftState): String {
@@ -73,8 +77,19 @@ object KeyboardLayouts {
         return key.label.ifEmpty { key.output }
     }
 
-    private fun char(c: String, weight: Float = 1f, special: Boolean = false): Key =
-        Key(KeyAction.CHARACTER, output = c, label = c, weight = weight, special = special)
+    private fun char(
+        c: String,
+        weight: Float = 1f,
+        special: Boolean = false,
+        numberRow: Boolean = false,
+    ): Key = Key(
+        KeyAction.CHARACTER,
+        output = c,
+        label = c,
+        weight = weight,
+        special = special,
+        numberRow = numberRow,
+    )
 
     private fun letters(numberRow: Boolean): KeyboardSpec {
         val rows = mutableListOf<KeyRow>()
@@ -82,9 +97,13 @@ object KeyboardLayouts {
             rows.add(
                 KeyRow(
                     listOf(
-                        char("1"), char("2"), char("3"), char("4"), char("5"),
-                        char("6"), char("7"), char("8"), char("9"), char("0"),
+                        char("1", numberRow = true), char("2", numberRow = true),
+                        char("3", numberRow = true), char("4", numberRow = true),
+                        char("5", numberRow = true), char("6", numberRow = true),
+                        char("7", numberRow = true), char("8", numberRow = true),
+                        char("9", numberRow = true), char("0", numberRow = true),
                     ),
+                    heightFactor = 0.62f,
                 ),
             )
         }
@@ -214,4 +233,19 @@ object KeyboardLayouts {
             ),
         )
     }
+
+    private fun numberPad() = KeyboardSpec(
+        listOf(
+            KeyRow(listOf(char("1"), char("2"), char("3"))),
+            KeyRow(listOf(char("4"), char("5"), char("6"))),
+            KeyRow(listOf(char("7"), char("8"), char("9"))),
+            KeyRow(
+                listOf(
+                    Key(KeyAction.BACKSPACE, icon = KeyIcon.BACKSPACE, weight = 1f, special = true),
+                    char("0"),
+                    Key(KeyAction.ENTER, icon = KeyIcon.ENTER, weight = 1f, special = true, accent = true),
+                ),
+            ),
+        ),
+    )
 }

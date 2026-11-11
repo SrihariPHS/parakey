@@ -30,7 +30,21 @@ class KeyboardLayoutTest {
             listOf("1", "2", "3", "4", "5", "6", "7", "8", "9", "0"),
             with.rows[0].keys.map { it.label },
         )
+        assertTrue(with.rows[0].heightFactor < 0.8f)
+        assertTrue(with.rows[0].keys.all { it.numberRow })
         assertEquals("q", with.rows[1].keys[0].label)
+    }
+
+    @Test
+    fun numberPadIsThreeByFourWithBackspaceAndEnter() {
+        val spec = KeyboardLayouts.specFor(KeyboardPage.NUMBER)
+        assertEquals(4, spec.rows.size)
+        assertEquals(listOf("1", "2", "3"), spec.rows[0].keys.map { it.label })
+        assertEquals(listOf("4", "5", "6"), spec.rows[1].keys.map { it.label })
+        assertEquals(listOf("7", "8", "9"), spec.rows[2].keys.map { it.label })
+        assertEquals("0", spec.rows[3].keys[1].label)
+        assertTrue(spec.rows[3].keys.any { it.action == KeyAction.BACKSPACE })
+        assertTrue(spec.rows[3].keys.any { it.action == KeyAction.ENTER })
     }
 
     @Test

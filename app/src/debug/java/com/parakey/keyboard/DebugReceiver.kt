@@ -54,6 +54,14 @@ class DebugReceiver : BroadcastReceiver() {
                     ParakeyImeService.instance?.debugSetNumberRow(intent.getBooleanExtra("enabled", false))
                     ok("number_row")
                 }
+                "numeric_pad" -> {
+                    ParakeyImeService.instance?.debugSetNumericPad(intent.getBooleanExtra("enabled", true))
+                    ok("numeric_pad")
+                }
+                "force_numeric" -> {
+                    ParakeyImeService.instance?.debugForceNumeric(intent.getBooleanExtra("enabled", true))
+                    ok("force_numeric")
+                }
                 "feedback" -> {
                     ParakeyImeService.instance?.debugSetFeedback(
                         intent.getBooleanExtra("haptics", true),

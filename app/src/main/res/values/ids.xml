@@ -5,6 +5,7 @@
     <item name="field_name" type="id" />
     <item name="field_email" type="id" />
     <item name="field_password" type="id" />
+    <item name="field_pin" type="id" />
     <item name="btn_clear" type="id" />
     <item name="status_text" type="id" />
 </resources>

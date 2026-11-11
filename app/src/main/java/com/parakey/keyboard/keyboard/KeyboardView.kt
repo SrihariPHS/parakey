@@ -74,6 +74,7 @@ class KeyboardView @JvmOverloads constructor(
     private var clipboardCanCopy = true
     private var suggestions: List<String> = emptyList()
     private var numberRow = false
+    private var numericOnly = false
     private var emojiRecents: List<String> = emptyList()
     private var hapticsEnabled = true
     private var soundEnabled = true
@@ -158,6 +159,18 @@ class KeyboardView @JvmOverloads constructor(
             invalidate()
         }
     }
+
+    fun setNumericOnly(enabled: Boolean) {
+        if (numericOnly == enabled) return
+        numericOnly = enabled
+        if (enabled) {
+            setPage(KeyboardPage.NUMBER)
+        } else if (page == KeyboardPage.NUMBER) {
+            setPage(KeyboardPage.LETTERS)
+        }
+    }
+
+    fun isNumericOnly(): Boolean = numericOnly
 
     fun setNumberRow(enabled: Boolean) {
         if (numberRow == enabled) return
@@ -340,7 +353,8 @@ class KeyboardView @JvmOverloads constructor(
         val gap = dimens.gap * density
         val top = dimens.topBar * density
         val bottomPad = 6f * density
-        val content = (top + 4f * density + spec.rows.size * row + (spec.rows.size - 1) * gap + bottomPad + bottomInset).toInt()
+        val rowUnits = spec.rows.sumOf { it.heightFactor.toDouble() }.toFloat()
+        val content = (top + 4f * density + rowUnits * row + (spec.rows.size - 1) * gap + bottomPad + bottomInset).toInt()
         val cap = (resources.displayMetrics.heightPixels * 0.56f).toInt()
         return min(content, cap)
     }
@@ -365,8 +379,9 @@ class KeyboardView @JvmOverloads constructor(
         val gap = dimens.gap * density
         val sidePad = dimens.sidePad * density
         val rowCount = spec.rows.size.coerceAtLeast(1)
-        val availableHeight = (height - contentTop - 6f * density - bottomInset).coerceAtLeast(rowCount * 32f * density)
-        val rowHeight = ((availableHeight - (rowCount - 1) * gap) / rowCount).coerceAtLeast(30f * density)
+        val availableHeight = (height - contentTop - 6f * density - bottomInset).coerceAtLeast(rowCount * 30f * density)
+        val rowUnits = spec.rows.sumOf { it.heightFactor.toDouble() }.toFloat().coerceAtLeast(0.1f)
+        val unitHeight = ((availableHeight - (rowCount - 1) * gap) / rowUnits).coerceAtLeast(26f * density)
 
         val newRects = ArrayList<Pair<Key, RectF>>(40)
         val rows = ArrayList<MutableList<Pair<Key, RectF>>>(spec.rows.size)
@@ -378,6 +393,7 @@ class KeyboardView @JvmOverloads constructor(
             val unit = usable / totalWeight
             var x = sidePad + row.sideInset * unit
             val rowRects = ArrayList<Pair<Key, RectF>>(row.keys.size)
+            val rowHeight = (unitHeight * row.heightFactor).coerceAtLeast(26f * density)
             for (key in row.keys) {
                 val w = unit * key.weight
                 val rect = RectF(x, y, x + w, y + rowHeight)
@@ -475,6 +491,20 @@ class KeyboardView @JvmOverloads constructor(
         val density = resources.displayMetrics.density
         val radius = dimens.keyRadius * density
 
+        // The number row is a single utility strip, not ten more letter keys.
+        val numberRects = keyRects.filter { it.first.numberRow }.map { it.second }
+        if (numberRects.isNotEmpty()) {
+            val strip = RectF(
+                numberRects.minOf { it.left } - dimens.sidePad * density,
+                numberRects.minOf { it.top },
+                numberRects.maxOf { it.right } + dimens.sidePad * density,
+                numberRects.maxOf { it.bottom },
+            )
+            paint.color = palette.special
+            paint.style = Paint.Style.FILL
+            canvas.drawRoundRect(strip, radius * 0.8f, radius * 0.8f, paint)
+        }
+
         for ((key, rect) in keyRects) {
             val pressed = pressedKey?.stableId == key.stableId
             val bg = when {
@@ -483,22 +513,38 @@ class KeyboardView @JvmOverloads constructor(
                 key.special -> palette.special
                 else -> palette.key
             }
-            if (!key.special) {
-                paint.color = palette.shadow
+            if (key.numberRow) {
+                if (pressed) {
+                    paint.color = palette.accent
+                    paint.style = Paint.Style.FILL
+                    canvas.drawRoundRect(
+                        rect.left + 2f * density,
+                        rect.top + 2f * density,
+                        rect.right - 2f * density,
+                        rect.bottom - 2f * density,
+                        radius * 0.7f,
+                        radius * 0.7f,
+                        paint,
+                    )
+                }
+            } else {
+                if (!key.special) {
+                    paint.color = palette.shadow
+                    paint.style = Paint.Style.FILL
+                    canvas.drawRoundRect(
+                        rect.left,
+                        rect.top + 2f * density,
+                        rect.right,
+                        rect.bottom + 2f * density,
+                        radius,
+                        radius,
+                        paint,
+                    )
+                }
+                paint.color = bg
                 paint.style = Paint.Style.FILL
-                canvas.drawRoundRect(
-                    rect.left,
-                    rect.top + 2f * density,
-                    rect.right,
-                    rect.bottom + 2f * density,
-                    radius,
-                    radius,
-                    paint,
-                )
+                canvas.drawRoundRect(rect, radius, radius, paint)
             }
-            paint.color = bg
-            paint.style = Paint.Style.FILL
-            canvas.drawRoundRect(rect, radius, radius, paint)
 
             val label = KeyboardLayouts.displayLabel(key, page, shift)
             if (key.icon != KeyIcon.NONE) {
@@ -510,11 +556,17 @@ class KeyboardView @JvmOverloads constructor(
                 val drawnIcon = if (key.action == KeyAction.SHIFT && shift == ShiftState.CAPS) KeyIcon.CAPS else key.icon
                 drawIcon(canvas, drawnIcon, rect.centerX(), rect.centerY(), min(rect.width(), rect.height()) * 0.38f, iconColor)
             } else if (label.isNotEmpty()) {
-                textPaint.color = if (key.accent) palette.onAccent else palette.text
+                textPaint.color = when {
+                    key.accent -> palette.onAccent
+                    key.numberRow && pressed -> palette.onAccent
+                    else -> palette.text
+                }
                 textPaint.typeface = if (key.special) Typeface.create("sans-serif-medium", Typeface.NORMAL) else Typeface.create("sans-serif", Typeface.NORMAL)
                 textPaint.textSize = when {
                     page == KeyboardPage.EMOJI -> dimens.emojiSize * density
                     key.action == KeyAction.SPACE -> 11f * density
+                    key.numberRow -> dimens.numberSize * density
+                    page == KeyboardPage.NUMBER && key.action == KeyAction.CHARACTER -> 30f * density
                     key.special -> dimens.specialSize * density
                     else -> dimens.letterSize * density
                 }
@@ -1635,9 +1687,9 @@ class KeyboardView @JvmOverloads constructor(
             KeyAction.BACKSPACE -> listener?.onBackspace()
             KeyAction.ENTER -> listener?.onEnter()
             KeyAction.SPACE -> listener?.onSpace()
-            KeyAction.SYMBOLS -> setPage(if (page == KeyboardPage.SYMBOLS) KeyboardPage.MORE_SYMBOLS else KeyboardPage.SYMBOLS)
-            KeyAction.LETTERS -> setPage(KeyboardPage.LETTERS)
-            KeyAction.EMOJI -> setPage(KeyboardPage.EMOJI)
+            KeyAction.SYMBOLS -> if (!numericOnly) setPage(if (page == KeyboardPage.SYMBOLS) KeyboardPage.MORE_SYMBOLS else KeyboardPage.SYMBOLS)
+            KeyAction.LETTERS -> if (!numericOnly) setPage(KeyboardPage.LETTERS)
+            KeyAction.EMOJI -> if (!numericOnly) setPage(KeyboardPage.EMOJI)
             KeyAction.MIC -> listener?.onMic()
             KeyAction.SETTINGS -> listener?.onSettings()
             KeyAction.NONE -> Unit
@@ -1695,6 +1747,7 @@ class KeyboardView @JvmOverloads constructor(
                 .append(",\"y\":").append(rect.top.toInt())
                 .append(",\"w\":").append(rect.width().toInt())
                 .append(",\"h\":").append(rect.height().toInt())
+                .append(",\"numberRow\":").append(key.numberRow)
                 .append(",\"alternates\":[").append(alternatesFor(key).joinToString(",") { "\"${escape(it)}\"" }).append("]")
                 .append('}')
         }
@@ -1725,7 +1778,7 @@ class KeyboardView @JvmOverloads constructor(
             "\"alternatePopup\":${alternatePopup != null},\"alternateSelected\":$alternateSelected,\"cursorMode\":$cursorMode," +
             "\"viewAccent\":\"#${String.format("%06X", 0xFFFFFF and palette.accent)}\"," +
             "\"viewBackground\":\"#${String.format("%06X", 0xFFFFFF and palette.background)}\"," +
-            "\"viewNumberRow\":$numberRow,\"status\":\"${escape(statusText)}\"}"
+            "\"viewNumberRow\":$numberRow,\"numericOnly\":$numericOnly,\"status\":\"${escape(statusText)}\"}"
     }
 
     fun keyRectFor(label: String): RectF? {

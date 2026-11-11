@@ -100,20 +100,30 @@ class ParakeyImeService : InputMethodService(), KeyboardView.Listener {
         return keyboardView
     }
 
+    override fun onStartInput(info: EditorInfo?, restarting: Boolean) {
+        super.onStartInput(info, restarting)
+        if (!::keyboardView.isInitialized || info == null) return
+        val numeric = settings.numericPadEnabled && isNumericField(info)
+        keyboardView.setNumericOnly(numeric)
+        if (numeric) keyboardView.setMicEnabled(false, "Number pad")
+    }
+
     override fun onStartInputView(info: EditorInfo?, restarting: Boolean) {
         super.onStartInputView(info, restarting)
         if (!::keyboardView.isInitialized) return
         applyAppearance()
         passwordField = info != null && isPasswordField(info)
         autoCorrectAllowed = info != null && allowsAutoCorrect(info)
+        val showNumeric = settings.numericPadEnabled && info != null && isNumericField(info)
+        keyboardView.setNumericOnly(showNumeric)
         keyboardView.hideClipboardMode()
         if (passwordField) {
             cancelDictation()
             keyboardView.setMicEnabled(false)
-            keyboardView.setStatus("Voice typing is off in password fields")
+            keyboardView.setStatus(if (showNumeric) "Number pad" else "Voice typing is off in password fields")
         } else {
             keyboardView.setMicEnabled(true)
-            keyboardView.setStatus("Tap the mic and speak")
+            keyboardView.setStatus(if (showNumeric) "Number pad" else "Tap the mic and speak")
         }
         keyboardView.showUndo(false)
         keyboardView.setShiftState(initialShift(info))
@@ -198,6 +208,7 @@ class ParakeyImeService : InputMethodService(), KeyboardView.Listener {
         super.onFinishInput()
         cancelDictation()
         if (::keyboardView.isInitialized) {
+            keyboardView.setNumericOnly(false)
             keyboardView.hideVoiceMode()
             keyboardView.hideClipboardMode()
             keyboardView.setSuggestions(emptyList())
@@ -236,7 +247,12 @@ class ParakeyImeService : InputMethodService(), KeyboardView.Listener {
                 return
             }
         }
-        ic?.commitText(text, 1)
+        var output = text
+        if (settings.smartPunctuation && autoCorrectAllowed && !passwordField && text == "\"") {
+            val before = ic?.getTextBeforeCursor(1, 0)?.toString().orEmpty()
+            output = if (before.isBlank() || before.lastOrNull()?.isWhitespace() == true) "\u201C" else "\u201D"
+        }
+        ic?.commitText(output, 1)
         if (keyboardView.currentPage() == KeyboardPage.EMOJI || text.codePoints().anyMatch { it >= 0x1F000 }) {
             settings.addEmojiRecent(text)
             keyboardView.setEmojiRecents(settings.emojiRecents)
@@ -510,6 +526,13 @@ class ParakeyImeService : InputMethodService(), KeyboardView.Listener {
                 variation != InputType.TYPE_TEXT_VARIATION_WEB_EMAIL_ADDRESS &&
                 variation != InputType.TYPE_TEXT_VARIATION_URI &&
                 variation != InputType.TYPE_TEXT_VARIATION_FILTER
+            else -> false
+        }
+    }
+
+    private fun isNumericField(info: EditorInfo): Boolean {
+        return when (info.inputType and InputType.TYPE_MASK_CLASS) {
+            InputType.TYPE_CLASS_NUMBER -> true
             else -> false
         }
     }
@@ -806,12 +829,13 @@ class ParakeyImeService : InputMethodService(), KeyboardView.Listener {
             "\"$name\":\"#${String.format("%06X", 0xFFFFFF and color)}\""
         }
         return "$base,\"theme\":\"${settings.theme}\",\"accent\":\"${settings.accent}\"," +
-            "\"numberRow\":${settings.numberRowEnabled},\"haptics\":${settings.hapticsEnabled}," +
+            "\"numberRow\":${settings.numberRowEnabled},\"numericPad\":${settings.numericPadEnabled},\"haptics\":${settings.hapticsEnabled}," +
             "\"emojiRecents\":[${settings.emojiRecents.joinToString(",") { "\"${it.replace("\"", "\\\"")}\"" }}]," +
             "\"sound\":${settings.soundEnabled},\"hapticEvents\":$hapticEvents,\"soundEvents\":$soundEvents," +
             "\"palette\":{$paletteJson}," +
             "\"modelReady\":${modelRepository.isInstalled()}," +
-            "\"passwordField\":$passwordField,\"transcribing\":$transcribing," +
+            "\"passwordField\":$passwordField,\"editorInputType\":${currentInputEditorInfo?.inputType ?: 0}," +
+            "\"transcribing\":$transcribing," +
             "\"autocorrect\":${settings.autocorrectEnabled},\"autoCorrectAllowed\":$autoCorrectAllowed," +
             "\"suggestions\":${settings.suggestionsEnabled}," +
             "\"autoCap\":${settings.autoCapitalizeEnabled},\"correctionsApplied\":$correctionsApplied," +
@@ -873,6 +897,19 @@ class ParakeyImeService : InputMethodService(), KeyboardView.Listener {
     fun debugSetAccent(accent: String) {
         settings.accent = accent
         applyAppearance()
+    }
+
+    fun debugSetNumericPad(enabled: Boolean) {
+        settings.numericPadEnabled = enabled
+        applyAppearance()
+    }
+
+    fun debugForceNumeric(enabled: Boolean) {
+        settings.numericPadEnabled = enabled
+        if (::keyboardView.isInitialized) {
+            keyboardView.setNumericOnly(enabled)
+            keyboardView.setMicEnabled(!enabled, if (enabled) "Number pad" else null)
+        }
     }
 
     fun debugSetNumberRow(enabled: Boolean) {

@@ -23,7 +23,9 @@ keylogging, no overlays.
   clear and recent clips.
 - **Typing feel:** a 43k-word offline dictionary, word suggestions and
   next-word predictions, high-confidence autocorrect (including contractions
-  such as `mightve → might've` and `liek → like`), double-space period,
+  such as `mightve → might've` and `liek → like`), a conservative two-edit pass
+  for longer words, text shortcuts (`btw`, `idk`, `omw`), smart quotes,
+  double-space period,
   nearest-key tiled hitboxes, and two-thumb key presses.
 - Parakeet TDT-CTC 110M English, int8, running locally through sherpa-onnx and
   ONNX Runtime. Output is cased and punctuated.
@@ -33,8 +35,12 @@ keylogging, no overlays.
 - **Appearance:** System, Light, Dark and true-black AMOLED modes with five
   accent palettes (mint, blue, violet, sunset, rose). Light accents are tuned
   for WCAG contrast; the keyboard and setup screen share the same palette.
-- **Optional number row:** one toggle adds 1–0 above the letters without
-  changing the symbols or emoji pages. Off by default.
+- **Optional number strip:** one toggle adds a slim, flat 1–0 strip above the
+  letters. It reads as a utility strip, not ten extra letter keys, and leaves
+  the symbols and emoji pages unchanged. Off by default.
+- **Number-only pad:** PIN, phone and quantity fields get a large 3×4 keypad
+  with backspace and enter, no letters and no word suggestions. Voice typing is
+  disabled there.
 - **Long-press gestures:** hold a letter for accents (é, ñ, ü …), hold
   punctuation for alternatives, or hold space and slide to move the cursor.
   Swipe left on backspace to delete a whole word. Recently used emoji move to
@@ -103,8 +109,8 @@ The suite builds, installs and drives the real keyboard on the connected device.
 It checks the build, IME registration, every key page, text insertion, password
 privacy, ASR accuracy against six known WAV fixtures, latency, warm starts,
 AudioRecord capture, rotation, all 20 theme/accent palettes, the optional
-number row, long-press popups, long-press-space cursor movement, sound/haptic
-toggles, monkey taps and the setup flow. Every check writes evidence to
+number strip, the PIN number pad, long-press popups, long-press-space cursor
+movement, sound/haptic toggles, monkey taps and the setup flow. Every check writes evidence to
 `verification/report.json` and `verification/REPORT.md`.
 
 - The committed report in [`verification/REPORT.md`](verification/REPORT.md)
