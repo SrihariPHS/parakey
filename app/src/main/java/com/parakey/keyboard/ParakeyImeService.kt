@@ -67,6 +67,9 @@ class ParakeyImeService : InputMethodService(), KeyboardView.Listener {
     private var lastInsertedLength = 0
     private var lastCorrectionApplied: String? = null
     private var lastCorrectionRestore: String? = null
+    private var lastSelectedText: String? = null
+    private var copyAttempts = 0
+    private var copySuccesses = 0
     private var correctionsApplied = 0
     private var suggestionsCommitted = 0
 
@@ -468,7 +471,12 @@ class ParakeyImeService : InputMethodService(), KeyboardView.Listener {
             toast("Copy is off in password fields")
             return
         }
-        val selected = runCatching { currentInputConnection?.getSelectedText(0)?.toString() }.getOrNull()
+        // Some editors drop the selection when the IME opens a panel, so fall
+        // back to the text captured by Select all.
+        copyAttempts++
+        val live = runCatching { currentInputConnection?.getSelectedText(0)?.toString() }.getOrNull()
+            ?.takeIf { it.isNotBlank() }
+        val selected = live ?: lastSelectedText
         if (selected.isNullOrBlank()) {
             toast("Select some text first")
             return
@@ -476,16 +484,25 @@ class ParakeyImeService : InputMethodService(), KeyboardView.Listener {
         val manager = getSystemService(ClipboardManager::class.java)
         manager?.setPrimaryClip(ClipData.newPlainText("Parakey", selected))
         settings.addClipboardHistory(selected)
+        copySuccesses++
         refreshClipboardPanel()
         toast("Copied")
     }
 
     override fun onClipboardSelectAll() {
-        currentInputConnection?.performContextMenuAction(android.R.id.selectAll)
+        val ic = currentInputConnection ?: return
+        // setSelection works for every editor; performContextMenuAction does not.
+        val text = ic.getTextBeforeCursor(50_000, 0)?.toString().orEmpty() +
+            ic.getTextAfterCursor(50_000, 0)?.toString().orEmpty()
+        if (text.isEmpty()) {
+            toast("Nothing to select")
+            return
+        }
+        ic.setSelection(0, text.length)
+        lastSelectedText = text
         mainHandler.postDelayed({
             refreshClipboardPanel()
-            val selected = runCatching { currentInputConnection?.getSelectedText(0)?.toString() }.getOrNull()
-            toast(if (selected.isNullOrBlank()) "Nothing selected" else "Selected all")
+            toast("Selected all")
         }, 150)
     }
 
@@ -517,6 +534,7 @@ class ParakeyImeService : InputMethodService(), KeyboardView.Listener {
 
     private fun hideUndo() {
         if (!::keyboardView.isInitialized) return
+        lastSelectedText = null
         lastInsertedText = null
         lastInsertedLength = 0
         keyboardView.showUndo(false)
@@ -856,6 +874,8 @@ class ParakeyImeService : InputMethodService(), KeyboardView.Listener {
         return "$base,\"theme\":\"${settings.theme}\",\"accent\":\"${settings.accent}\"," +
             "\"numberRow\":${settings.numberRowEnabled},\"numericPad\":${settings.numericPadEnabled},\"haptics\":${settings.hapticsEnabled}," +
             "\"emojiRecents\":[${settings.emojiRecents.joinToString(",") { "\"${it.replace("\"", "\\\"")}\"" }}]," +
+            "\"clipboardRecent\":[${settings.clipboardHistory.joinToString(",") { "\"${it.replace("\"", "\\\"")}\"" }}]," +
+            "\"selectedLength\":${lastSelectedText?.length ?: 0},\"copyAttempts\":$copyAttempts,\"copySuccesses\":$copySuccesses," +
             "\"sound\":${settings.soundEnabled},\"hapticEvents\":$hapticEvents,\"soundEvents\":$soundEvents," +
             "\"palette\":{$paletteJson}," +
             "\"modelReady\":${modelRepository.isInstalled()}," +

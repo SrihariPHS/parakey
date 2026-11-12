@@ -140,7 +140,9 @@ class KeyboardView @JvmOverloads constructor(
 
     init {
         isClickable = true
-        isFocusable = true
+        // The IME window must not take focus from the editor: doing so clears
+        // the text selection and breaks Select-all + Copy.
+        isFocusable = false
         importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_YES
         contentDescription = "Parakey keyboard"
         setWillNotDraw(false)
@@ -476,14 +478,25 @@ class KeyboardView @JvmOverloads constructor(
         val closeSize = 36f * density
         clipboardRects["close"] = RectF(width - pad - closeSize, 8f * density, width - pad, 8f * density + closeSize)
         val gap = 6f * density
-        val buttonW = (width - 2f * pad - 3f * gap) / 4f
+        // Copy / All / Clear are small secondary actions. Pasting is done by
+        // tapping a clipboard row, like Gboard.
+        val buttonW = (width - 2f * pad - 2f * gap) / 3f
         val buttonY = 42f * density
-        val buttonH = 34f * density
-        clipboardRects["paste"] = RectF(pad, buttonY, pad + buttonW, buttonY + buttonH)
-        clipboardRects["copy"] = RectF(pad + buttonW + gap, buttonY, pad + 2f * buttonW + gap, buttonY + buttonH)
-        clipboardRects["selectAll"] = RectF(pad + 2f * buttonW + 2f * gap, buttonY, pad + 3f * buttonW + 2f * gap, buttonY + buttonH)
-        clipboardRects["clear"] = RectF(pad + 3f * buttonW + 3f * gap, buttonY, width - pad, buttonY + buttonH)
-        clipboardRects["item0"] = RectF(pad, 200f * density, width - pad, 246f * density)
+        val buttonH = 32f * density
+        clipboardRects["copy"] = RectF(pad, buttonY, pad + buttonW, buttonY + buttonH)
+        clipboardRects["selectAll"] = RectF(pad + buttonW + gap, buttonY, pad + 2f * buttonW + gap, buttonY + buttonH)
+        clipboardRects["clear"] = RectF(pad + 2f * buttonW + 2f * gap, buttonY, width - pad, buttonY + buttonH)
+
+        val currentTop = 84f * density
+        clipboardRects["current"] = RectF(pad, currentTop, width - pad, currentTop + 50f * density)
+        val recentLabel = currentTop + 66f * density
+        val itemTop = recentLabel + 10f * density
+        val itemH = 48f * density
+        for (index in 0 until 3) {
+            val top = itemTop + index * (itemH + gap)
+            if (top + itemH > height - 10f * density) break
+            clipboardRects["item$index"] = RectF(pad, top, width - pad, top + itemH)
+        }
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -652,13 +665,12 @@ class KeyboardView @JvmOverloads constructor(
         textPaint.textSize = 17f * density
         canvas.drawText("×", close.centerX(), close.centerY() - (textPaint.descent() + textPaint.ascent()) / 2f, textPaint)
 
-        val labels = mapOf("paste" to "Paste", "copy" to "Copy", "selectAll" to "All", "clear" to "Clear")
+        val labels = mapOf("copy" to "Copy", "selectAll" to "All", "clear" to "Clear")
         for ((name, label) in labels) {
             val rect = clipboardRects[name] ?: continue
             paint.color = when (name) {
-                "paste" -> palette.accent
-                "clear" -> colorWithAlpha(palette.danger, 24)
-                "copy" -> if (clipboardCanCopy) palette.special else colorWithAlpha(palette.special, 120)
+                "clear" -> colorWithAlpha(palette.danger, 20)
+                "copy" -> if (clipboardCanCopy) palette.special else colorWithAlpha(palette.special, 110)
                 else -> palette.special
             }
             paint.style = Paint.Style.FILL
@@ -667,7 +679,6 @@ class KeyboardView @JvmOverloads constructor(
             textPaint.textSize = 11f * density
             textPaint.typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
             textPaint.color = when {
-                name == "paste" -> palette.onAccent
                 name == "clear" -> palette.danger
                 name == "copy" && !clipboardCanCopy -> palette.hint
                 else -> palette.text
@@ -675,55 +686,76 @@ class KeyboardView @JvmOverloads constructor(
             canvas.drawText(label, rect.centerX(), rect.centerY() - (textPaint.descent() + textPaint.ascent()) / 2f, textPaint)
         }
 
-        val previewCard = RectF(16f * density, 84f * density, width - 16f * density, 174f * density)
+        // Current clipboard: tap anywhere in this card to paste it.
+        val currentRect = clipboardRects["current"] ?: RectF()
         paint.color = palette.suggestionBg
         paint.style = Paint.Style.FILL
-        canvas.drawRoundRect(previewCard, 12f * density, 12f * density, paint)
+        canvas.drawRoundRect(currentRect, 12f * density, 12f * density, paint)
+        if (clipboardPreview.isNotBlank()) {
+            paint.color = colorWithAlpha(palette.accent, 18)
+            paint.style = Paint.Style.STROKE
+            paint.strokeWidth = 1.2f * density
+            canvas.drawRoundRect(currentRect, 12f * density, 12f * density, paint)
+            paint.style = Paint.Style.FILL
+        }
         textPaint.textAlign = Paint.Align.LEFT
         textPaint.color = palette.hint
         textPaint.textSize = 9f * density
         textPaint.typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
-        canvas.drawText("CURRENT CLIPBOARD", previewCard.left + 12f * density, previewCard.top + 18f * density, textPaint)
+        canvas.drawText(
+            if (clipboardPreview.isBlank()) "CURRENT CLIPBOARD" else "TAP TO PASTE CURRENT CLIPBOARD",
+            currentRect.left + 12f * density,
+            currentRect.top + 16f * density,
+            textPaint,
+        )
         textPaint.color = if (clipboardPreview.isBlank()) palette.hint else palette.text
-        textPaint.textSize = 12f * density
+        textPaint.textSize = 12.5f * density
         textPaint.typeface = Typeface.create("sans-serif", Typeface.NORMAL)
         drawWrappedText(
             canvas,
             clipboardPreview.ifBlank { "No text on the clipboard" },
-            previewCard.left + 12f * density,
-            previewCard.top + 38f * density,
-            previewCard.width() - 24f * density,
-            16f * density,
-            3,
+            currentRect.left + 12f * density,
+            currentRect.top + 34f * density,
+            currentRect.width() - 24f * density,
+            15f * density,
+            2,
         )
 
         textPaint.textAlign = Paint.Align.LEFT
         textPaint.color = palette.hint
         textPaint.textSize = 9f * density
         textPaint.typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
-        canvas.drawText("RECENT", 16f * density, 190f * density, textPaint)
+        val recentLabelY = (clipboardRects["current"]?.bottom ?: (134f * density)) + 18f * density
+        canvas.drawText("RECENT", 16f * density, recentLabelY, textPaint)
 
-        val item = clipboardItems.firstOrNull()
-        val itemRect = clipboardRects["item0"] ?: RectF()
-        if (item.isNullOrBlank()) {
+        if (clipboardItems.isEmpty()) {
             textPaint.color = palette.hint
             textPaint.textSize = 11f * density
             textPaint.typeface = Typeface.create("sans-serif", Typeface.NORMAL)
-            canvas.drawText("Copy or paste something to build history.", 16f * density, 220f * density, textPaint)
+            canvas.drawText("Copy or paste something to build history.", 16f * density, recentLabelY + 28f * density, textPaint)
         } else {
-            paint.color = palette.suggestionBg
-            paint.style = Paint.Style.FILL
-            canvas.drawRoundRect(itemRect, 10f * density, 10f * density, paint)
-            textPaint.color = palette.text
-            textPaint.textSize = 11f * density
-            textPaint.typeface = Typeface.create("sans-serif", Typeface.NORMAL)
-            val shown = TextUtils.ellipsize(item.replace("\n", " "), textPaint, itemRect.width() - 76f * density, TextUtils.TruncateAt.END).toString()
-            canvas.drawText(shown, itemRect.left + 10f * density, itemRect.centerY() - (textPaint.descent() + textPaint.ascent()) / 2f, textPaint)
-            if (clipboardItems.size > 1) {
-                textPaint.color = palette.hint
-                textPaint.textSize = 9f * density
-                textPaint.textAlign = Paint.Align.RIGHT
-                canvas.drawText("+${clipboardItems.size - 1}", itemRect.right - 10f * density, itemRect.centerY() - (textPaint.descent() + textPaint.ascent()) / 2f, textPaint)
+            for (index in 0 until 3) {
+                val item = clipboardItems.getOrNull(index) ?: break
+                val itemRect = clipboardRects["item$index"] ?: break
+                paint.color = palette.suggestionBg
+                paint.style = Paint.Style.FILL
+                canvas.drawRoundRect(itemRect, 10f * density, 10f * density, paint)
+                textPaint.color = palette.text
+                textPaint.textSize = 11.5f * density
+                textPaint.typeface = Typeface.create("sans-serif", Typeface.NORMAL)
+                textPaint.textAlign = Paint.Align.LEFT
+                val shown = TextUtils.ellipsize(
+                    item.replace("\n", " "),
+                    textPaint,
+                    itemRect.width() - 30f * density,
+                    TextUtils.TruncateAt.END,
+                ).toString()
+                canvas.drawText(
+                    shown,
+                    itemRect.left + 12f * density,
+                    itemRect.centerY() - (textPaint.descent() + textPaint.ascent()) / 2f,
+                    textPaint,
+                )
             }
         }
     }
@@ -1374,10 +1406,12 @@ class KeyboardView @JvmOverloads constructor(
                     val target = clipboardRects.entries.firstOrNull { it.value.contains(x, y) }?.key
                     when {
                         target == "close" -> listener?.onClipboardClose()
-                        target == "paste" -> listener?.onClipboardPaste()
                         target == "copy" -> listener?.onClipboardCopy()
                         target == "selectAll" -> listener?.onClipboardSelectAll()
                         target == "clear" -> listener?.onClipboardClear()
+                        target == "current" -> if (clipboardPreview.isNotBlank()) {
+                            listener?.onClipboardItem(clipboardPreview)
+                        }
                         target != null && target.startsWith("item") -> {
                             val index = target.removePrefix("item").toIntOrNull()
                             if (index != null) clipboardItems.getOrNull(index)?.let { listener?.onClipboardItem(it) }

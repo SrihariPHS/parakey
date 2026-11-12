@@ -144,7 +144,9 @@ class SettingsStore(context: Context) {
 
     fun addClipboardHistory(text: String) {
         val clean = text.trim()
-        if (clean.isEmpty()) return
+        if (clean.length < 2) return
+        // Android's clipboard overlay can surface action labels as clip text.
+        if (clean.uppercase() in setOf("COPY_SELECTION", "CUT_SELECTION", "COPY", "CUT")) return
         clipboardHistory = listOf(clean) + clipboardHistory.filter { it != clean }
     }
 

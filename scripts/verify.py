@@ -2230,25 +2230,35 @@ def build_checks(h: Harness) -> None:
         h.clear_field()
         h.debug("set_clipboard", text="FIRST_CLIP")
         h.tap_rect("clip")
-        h.tap_clipboard("paste")
+        # Tap the current-clipboard card itself: no Paste button exists.
+        h.tap_clipboard("current")
         time.sleep(0.5)
         first = h.field_text("field_message")
         h.clear_field()
-        h.debug("insert", text="COPY_SELECTION")
+        h.debug("insert", text="COPIED_TEXT")
         time.sleep(0.2)
         h.tap_rect("clip")
         h.tap_clipboard("selectAll")
-        time.sleep(0.4)
+        time.sleep(0.5)
         h.tap_clipboard("copy")
-        time.sleep(0.3)
+        time.sleep(0.4)
         h.tap_clipboard("close")
         time.sleep(0.3)
         h.clear_field()
         h.tap_rect("clip")
-        h.tap_clipboard("paste")
+        # The copied text is now the newest recent row; tap that row rather
+        # than a Paste button, which no longer exists.
+        recent = h.state(refresh=True).get("clipboardRecent") or []
+        if not recent:
+            raise RuntimeError("clipboard history is empty after copy")
+        if recent[0] != "COPIED_TEXT":
+            h.tap_clipboard("item0")
+            time.sleep(0.4)
+            recent = h.state(refresh=True).get("clipboardRecent") or []
+        h.tap_clipboard("item0")
         time.sleep(0.5)
         second = h.field_text("field_message")
-        return first == "FIRST_CLIP" and second == "COPY_SELECTION", f"first={first!r} second={second!r}"
+        return first == "FIRST_CLIP" and second == "COPIED_TEXT", f"first={first!r} second={second!r}"
 
     def r_status():
         h.start_activity(MAIN)

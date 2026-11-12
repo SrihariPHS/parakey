@@ -19,6 +19,18 @@ sound and haptics are on, the theme is System/mint.
 - New permission: `REQUEST_INSTALL_PACKAGES`, the standard Android permission
   for self-updates.
 
+## Clipboard
+
+- **Tap a clip to paste it.** The current clipboard card and every recent row
+  are now paste targets, like Gboard.
+- The redundant Paste button is gone. Copy, All and Clear remain as small
+  secondary actions.
+- Recent clips now show up to three rows instead of one, and Android's
+  automation labels (`COPY_SELECTION`, `CUT_SELELCTION`) are filtered out.
+- Select-all is more reliable: it sets the editor selection directly, and Copy
+  keeps a fallback of the selected text if the host drops the selection when
+  the panel opens.
+
 ## Appearance
 
 - Four theme modes: **System**, **Light**, **Dark** and true-black **AMOLED**.

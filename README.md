@@ -13,14 +13,23 @@ keylogging, no overlays.
 | --- | --- | --- |
 | ![Voice panel](docs/voice.png) | ![Password field](docs/password.png) | ![Clipboard panel](docs/clipboard.png) |
 
+| Light · Sunset | Dark · Violet | AMOLED · Rose |
+| --- | --- | --- |
+| ![Light sunset theme](docs/theme-light-sunset.png) | ![Dark violet theme](docs/theme-dark-violet.png) | ![AMOLED rose theme](docs/theme-amoled-rose.png) |
+
+| Number row | PIN number pad | Updates |
+| --- | --- | --- |
+| ![Number row](docs/number-strip.png) | ![Number pad](docs/number-pad.png) | ![Updates card](docs/updates-card.png) |
+
 ## What works
 
 - A system-wide Android IME: letters, shift/caps, symbols, emoji, backspace,
   enter and a mic key in a familiar Gboard-style layout.
 - **No dead gaps:** taps in the gaps between keys snap to the nearest key, with
   extra touch slop so a small finger drift does not cancel a press.
-- **Clipboard built in:** a clipboard button opens paste, copy, select-all,
-  clear and recent clips.
+- **Clipboard built in:** a clipboard button opens your current clip and
+  recent clips. Tap any clip to paste it, like Gboard — there is no separate
+  Paste button. Copy, select-all and clear are still there.
 - **Typing feel:** a 43k-word offline dictionary, word suggestions and
   next-word predictions, high-confidence autocorrect (including contractions
   such as `mightve → might've` and `liek → like`), a conservative two-edit pass
