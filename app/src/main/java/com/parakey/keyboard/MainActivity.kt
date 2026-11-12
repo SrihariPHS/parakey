@@ -34,6 +34,11 @@ import com.parakey.keyboard.ui.dp
 import com.parakey.keyboard.ui.roundedDrawable
 import com.parakey.keyboard.ui.setRoundedBackground
 import com.parakey.keyboard.ui.styleButton
+import com.parakey.keyboard.update.UpdateChecker
+import com.parakey.keyboard.update.UpdateDownloader
+import com.parakey.keyboard.update.UpdateFileProvider
+import com.parakey.keyboard.update.UpdateInfo
+import java.io.File
 import com.parakey.keyboard.voice.ModelDownloader
 import com.parakey.keyboard.voice.ModelRepository
 import com.parakey.keyboard.voice.ParakeetEngine
@@ -66,6 +71,13 @@ class MainActivity : android.app.Activity() {
     private lateinit var repository: ModelRepository
     private lateinit var colors: AppColors
     private lateinit var downloader: ModelDownloader
+    private val updateChecker by lazy { UpdateChecker(this) }
+    private val updateDownloader by lazy { UpdateDownloader(this) }
+    private var updateStatus: TextView? = null
+    private var updateAction: TextView? = null
+    private var availableUpdate: UpdateInfo? = null
+    private var checkingUpdate = false
+    private var downloadingUpdate = false
     private var night = false
     private var downloading = false
 
@@ -112,10 +124,17 @@ class MainActivity : android.app.Activity() {
     override fun onResume() {
         super.onResume()
         refreshSetup()
+        if (settings.autoUpdateCheck && !checkingUpdate && !downloadingUpdate) {
+            val day = 24L * 60L * 60L * 1000L
+            if (System.currentTimeMillis() - settings.lastUpdateCheck > day) {
+                checkForUpdates(silent = true)
+            }
+        }
     }
 
     override fun onDestroy() {
         downloader.cancel()
+        updateDownloader.cancel()
         super.onDestroy()
     }
 
@@ -234,6 +253,8 @@ class MainActivity : android.app.Activity() {
         content.addView(buildTypingCard())
         content.addView(sectionLabel("APPEARANCE"))
         content.addView(buildThemeCard())
+        content.addView(sectionLabel("UPDATES"))
+        content.addView(buildUpdateCard())
         content.addView(buildFooter())
     }
 
@@ -722,6 +743,209 @@ class MainActivity : android.app.Activity() {
         }
         card.addView(preview)
         return card
+    }
+
+    private fun buildUpdateCard(): View {
+        val card = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(16), dp(15), dp(16), dp(15))
+            background = roundedDrawable(this@MainActivity, colors.card, 18f, colors.border, 1f)
+            layoutParams = LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(10) }
+        }
+        card.addView(appText("Parakey ${BuildConfig.VERSION_NAME}", 16f, colors.text, bold = true))
+        updateStatus = appText("Updates are checked once a day over HTTPS.", 12f, colors.muted).apply {
+            setPadding(0, dp(4), 0, dp(10))
+        }
+        card.addView(updateStatus)
+
+        val row = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(0, dp(2), 0, dp(4))
+        }
+        val textCol = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        textCol.addView(appText("Check for updates", 13f, colors.text, bold = true))
+        textCol.addView(appText("Daily check; installs only after you confirm.", 10.5f, colors.muted).apply {
+            setPadding(0, dp(2), 0, 0)
+        })
+        row.addView(textCol, LinearLayout.LayoutParams(0, -2, 1f))
+        val switch = Switch(this).apply {
+            isChecked = settings.autoUpdateCheck
+            setOnCheckedChangeListener { _, value ->
+                settings.autoUpdateCheck = value
+                if (value) checkForUpdates(silent = true)
+            }
+        }
+        row.addView(switch, LinearLayout.LayoutParams(-2, -2).apply { marginStart = dp(10) })
+        card.addView(row)
+
+        val downloadRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(0, dp(2), 0, dp(4))
+        }
+        val downloadText = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        downloadText.addView(appText("Download updates automatically", 13f, colors.text, bold = true))
+        downloadText.addView(appText("Android still asks before installing.", 10.5f, colors.muted).apply {
+            setPadding(0, dp(2), 0, 0)
+        })
+        downloadRow.addView(downloadText, LinearLayout.LayoutParams(0, -2, 1f))
+        val downloadSwitch = Switch(this).apply {
+            isChecked = settings.autoUpdateDownload
+            setOnCheckedChangeListener { _, value -> settings.autoUpdateDownload = value }
+        }
+        downloadRow.addView(downloadSwitch, LinearLayout.LayoutParams(-2, -2).apply { marginStart = dp(10) })
+        card.addView(downloadRow)
+
+        val actions = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(0, dp(10), 0, 0)
+        }
+        updateAction = appText("Check now", 12.5f, colors.onAccent, bold = true).apply {
+            gravity = Gravity.CENTER
+            setPadding(dp(14), dp(10), dp(14), dp(10))
+            setRoundedBackground(colors.accent, 12f, rippleColor = colorWithAlpha(colors.onAccent, 35))
+            setOnClickListener { onUpdateAction() }
+        }
+        actions.addView(updateAction, LinearLayout.LayoutParams(-2, -2))
+        val releases = appText("Release notes", 12f, colors.accent, bold = true).apply {
+            gravity = Gravity.CENTER
+            setPadding(dp(12), dp(10), dp(4), dp(10))
+            setOnClickListener { openUrl("${BuildConfig.PROJECT_URL}/releases") }
+        }
+        actions.addView(releases, LinearLayout.LayoutParams(-2, -2))
+        card.addView(actions)
+        return card
+    }
+
+    private fun onUpdateAction() {
+        val info = availableUpdate
+        if (downloadingUpdate) return
+        if (info == null) {
+            checkForUpdates(silent = false)
+            return
+        }
+        AlertDialog.Builder(this)
+            .setTitle("Install Parakey ${info.version}?")
+            .setMessage(
+                buildString {
+                    append('\n')
+                    if (info.notes.isNotBlank()) {
+                        append(info.notes)
+                        append('\n')
+                    }
+                    append("\nThe APK is checked against the release SHA-256 before Android asks you to install it. Your settings and speech model are kept.")
+                },
+            )
+            .setPositiveButton("Download and install") { _, _ -> downloadUpdate(info) }
+            .setNegativeButton("Later") { _, _ ->
+                settings.dismissedUpdateVersion = info.version
+                updateStatus?.text = "Parakey ${info.version} is available — check again anytime."
+            }
+            .show()
+    }
+
+    private fun checkForUpdates(silent: Boolean) {
+        if (checkingUpdate) return
+        checkingUpdate = true
+        updateStatus?.text = "Checking for updates…"
+        Thread({
+            val result = updateChecker.check()
+            runOnUiThread {
+                checkingUpdate = false
+                result.onSuccess { info ->
+                    settings.lastUpdateCheck = System.currentTimeMillis()
+                    availableUpdate = info
+                    if (info == null) {
+                        updateStatus?.text = "Parakey ${BuildConfig.VERSION_NAME} is up to date."
+                        updateAction?.text = "Check now"
+                    } else {
+                        updateStatus?.text = "Parakey ${info.version} is available. " +
+                            if (info.notes.isNotBlank()) info.notes else ""
+                        updateAction?.text = "Update to ${info.version}"
+                        if (settings.autoUpdateDownload && !downloadingUpdate) {
+                            downloadUpdate(info)
+                        }
+                    }
+                }.onFailure { error ->
+                    availableUpdate = null
+                    updateStatus?.text = if (silent) {
+                        "Could not check for updates. Check your connection."
+                    } else {
+                        "Update check failed: ${error.message}"
+                    }
+                    updateAction?.text = "Try again"
+                }
+            }
+        }, "parakey-update-check").start()
+    }
+
+    private fun downloadUpdate(info: UpdateInfo) {
+        downloadingUpdate = true
+        updateStatus?.text = "Downloading Parakey ${info.version}…"
+        updateAction?.text = "Downloading…"
+        updateDownloader.download(info, object : UpdateDownloader.Listener {
+            override fun onProgress(percent: Int, downloadedBytes: Long, totalBytes: Long) {
+                runOnUiThread {
+                    updateStatus?.text = "Downloading Parakey ${info.version}… $percent%"
+                }
+            }
+
+            override fun onReady(file: File) {
+                runOnUiThread {
+                    downloadingUpdate = false
+                    updateStatus?.text = "Verified. Android will ask you to install."
+                    updateAction?.text = "Install ${info.version}"
+                    installApk(file)
+                }
+            }
+
+            override fun onError(message: String) {
+                runOnUiThread {
+                    downloadingUpdate = false
+                    updateStatus?.text = "Update download failed: $message"
+                    updateAction?.text = "Try again"
+                }
+            }
+        }.let { it })
+    }
+
+    private fun installApk(file: File) {
+        if (Build.VERSION.SDK_INT >= 26 && !packageManager.canRequestPackageInstalls()) {
+            AlertDialog.Builder(this)
+                .setTitle("Allow installs from Parakey")
+                .setMessage(
+                    "Android needs permission to install the downloaded update. Turn on " +
+                        "\"Allow from this source\" for Parakey, then tap Install again.",
+                )
+                .setPositiveButton("Open settings") { _, _ ->
+                    try {
+                        startActivity(
+                            Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES)
+                                .setData(Uri.parse("package:$packageName")),
+                        )
+                    } catch (_: Throwable) {
+                        Toast.makeText(this, "Open Settings → Apps → Parakey", Toast.LENGTH_LONG).show()
+                    }
+                }
+                .setNegativeButton("Cancel", null)
+                .show()
+            return
+        }
+        try {
+            val intent = Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(
+                    UpdateFileProvider.uriFor(this@MainActivity, file),
+                    "application/vnd.android.package-archive",
+                )
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            startActivity(intent)
+        } catch (t: Throwable) {
+            Toast.makeText(this, "Could not open the installer: ${t.message}", Toast.LENGTH_LONG).show()
+            openUrl(BuildConfig.PROJECT_URL + "/releases")
+        }
     }
 
     private fun buildFooter(): View {

@@ -21,12 +21,13 @@ android {
         applicationId = "com.parakey.keyboard"
         minSdk = 26
         targetSdk = 35
-        versionCode = 7
-        versionName = "1.1.2"
+        versionCode = 8
+        versionName = "1.1.3"
 
         buildConfigField("String", "MODEL_URL", "\"$modelUrl\"")
         buildConfigField("String", "TOKENS_URL", "\"$tokensUrl\"")
         buildConfigField("String", "PROJECT_URL", "\"$projectUrl\"")
+        buildConfigField("String", "UPDATE_REPO", "\"SrihariPHS/parakey\"")
         buildConfigField("String", "MODEL_SHA256", "\"9177a9146cf32ee0cc8152276ef95116f312018d316be37ccf57f7efea81fc1a\"")
         buildConfigField("String", "TOKENS_SHA256", "\"450e56bd2f036fe5b6aa821865838cc5aa9d8b0106134ce9a9ba0664abe6cd10\"")
         buildConfigField("long", "MODEL_BYTES", "131652171L")

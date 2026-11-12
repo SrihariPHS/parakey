@@ -1,4 +1,4 @@
-# Parakey 1.1.2 — number pad, smarter typing and zoom-free number row
+# Parakey 1.1.3 — number pad, smarter typing and zoom-free number row
 
 This release keeps the verified typing and voice baseline and adds a functional
 round: a dedicated numeric keypad, a slimmer and clearly distinct number strip,
@@ -67,7 +67,7 @@ behaviour: System theme, mint accent, number row off, sound and haptics on.
 Android 8.0+ (API 26), arm64-v8a. The Moto G85 (Android 16) remains the physical
 reference device. No new permissions, dependencies or network calls.
 
-## 1.1.2 additions
+## 1.1.3 additions
 
 - **Number-only pad** for `TYPE_CLASS_NUMBER` and `TYPE_CLASS_PHONE` fields:
   a large 3×4 keypad with backspace, enter and an ABC escape, decimal and minus
@@ -85,3 +85,21 @@ reference device. No new permissions, dependencies or network calls.
   protected list covers common technical terms (`params`, `nginx`, `retries`,
   `Priya`). Long-press is not offered on the numeric pad.
 - The number strip and number pad default to on; the strip is off. Verified by N01, N02, N03 and K24.
+
+## 1.1.3 — built-in updates
+
+- **Updates card** in setup: current version, release notes, *Check now* and a
+  link to the release history.
+- **Daily automatic check** (on by default, can be turned off). Only a
+  successful check resets the 24-hour timer, so an offline launch retries next
+  time.
+- **Optional automatic download** (off by default). Android always shows its
+  own install confirmation.
+- **Verified downloads:** the APK must come from
+  `github.com/SrihariPHS/parakey/releases/download/…`, its SHA-256 must match
+  the published release digest, and the file is served to the installer through
+  a read-only provider limited to `cache/updates`.
+- New permission: `REQUEST_INSTALL_PACKAGES` (the standard Android permission
+  for self-updates). Nothing installs silently.
+- U01/U02 in the 100-check suite now exercise the live release lookup and a real
+  verified APK download.

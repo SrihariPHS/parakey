@@ -48,9 +48,14 @@ keylogging, no overlays.
 - **Sound and haptics:** independent key-click and vibration toggles, both on
   by default and skipped when you turn them off.
 - Key previews and a live voice panel with an amplitude meter.
+- **Built-in updates:** an Updates card checks the project's GitHub releases
+  once a day over HTTPS, shows the release notes, downloads the APK, verifies
+  its SHA-256, and hands it to Android's installer. Auto-download is optional;
+  Android always asks before installing. The check can be turned off.
 - A setup screen that enables the keyboard, downloads the model (126 MB) with a
   SHA-256 check, grants the microphone and opens a test pad.
-- A 100-check verification suite, including a physical Moto G85 acceptance gate.
+- A 100-check verification suite, including a physical Moto G85 acceptance gate
+  and live update-channel checks.
 
 ## Try it on Android
 
@@ -156,8 +161,13 @@ sherpa-onnx 2.0.1 AAR (`app/libs/`), which includes ONNX Runtime for
 - Speech model: NVIDIA Parakeet TDT-CTC 110M, **CC-BY-4.0**. The int8 ONNX
   export is by VocaHQ. See `THIRD_PARTY_NOTICES.md`.
 - sherpa-onnx: Apache-2.0. ONNX Runtime: MIT.
-- No analytics, ads, telemetry or network calls during dictation. The only
-  network request is the one-time model download.
+- No analytics, ads or telemetry. Network requests are limited to the one-time
+  model download and the optional update check against
+  `api.github.com/repos/SrihariPHS/parakey`. Dictation never touches the
+  network. Update APKs are accepted only from this repository's release
+  downloads and must match the published SHA-256.
+- The update installer uses Android's standard package installer; Parakey asks
+  for the `REQUEST_INSTALL_PACKAGES` permission and never installs silently.
 
 ## Development helpers
 

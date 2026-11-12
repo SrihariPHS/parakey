@@ -145,6 +145,69 @@ class DebugReceiver : BroadcastReceiver() {
                         ok("play_wav")
                     }
                 }
+                "update_check" -> {
+                    val checker = com.parakey.keyboard.update.UpdateChecker(context)
+                    val latch = java.util.concurrent.CountDownLatch(1)
+                    var result: Result<com.parakey.keyboard.update.UpdateInfo?>? = null
+                    Thread({
+                        result = checker.check(includeCurrentRelease = true)
+                        latch.countDown()
+                    }, "parakey-debug-update-check").start()
+                    latch.await(30, java.util.concurrent.TimeUnit.SECONDS)
+                    val info = result?.getOrNull()
+                    JSONObject()
+                        .put("ok", result?.isSuccess == true)
+                        .put("current", BuildConfig.VERSION_NAME)
+                        .put("latest", info?.version ?: JSONObject.NULL)
+                        .put("available", info != null)
+                        .put("trusted", info != null && com.parakey.keyboard.update.UpdatePolicy.isTrustedApkUrl(info.apkUrl))
+                        .put("sha", info?.sha256 ?: JSONObject.NULL)
+                        .put("size", info?.sizeBytes ?: 0)
+                        .put("notes", info?.notes ?: "")
+                        .put("releaseUrl", info?.releaseUrl ?: "")
+                        .put("error", result?.exceptionOrNull()?.message ?: JSONObject.NULL)
+                }
+                "update_download" -> {
+                    val checker = com.parakey.keyboard.update.UpdateChecker(context)
+                    val checkLatch = java.util.concurrent.CountDownLatch(1)
+                    var checked: Result<com.parakey.keyboard.update.UpdateInfo?>? = null
+                    Thread({
+                        checked = checker.check(includeCurrentRelease = true)
+                        checkLatch.countDown()
+                    }, "parakey-debug-update-lookup").start()
+                    checkLatch.await(30, java.util.concurrent.TimeUnit.SECONDS)
+                    val info = checked?.getOrNull()
+                        ?: throw IllegalStateException(
+                            "No release available: " +
+                                (checked?.exceptionOrNull()?.message ?: "null release"),
+                        )
+                    val latch = java.util.concurrent.CountDownLatch(1)
+                    var verified = false
+                    var message = ""
+                    com.parakey.keyboard.update.UpdateDownloader(context).download(
+                        info,
+                        object : com.parakey.keyboard.update.UpdateDownloader.Listener {
+                            override fun onProgress(percent: Int, downloadedBytes: Long, totalBytes: Long) = Unit
+                            override fun onReady(file: File) {
+                                verified = checker.sha256(file).equals(info.sha256, ignoreCase = true)
+                                message = "downloaded"
+                                file.delete()
+                                latch.countDown()
+                            }
+                            override fun onError(messageText: String) {
+                                message = messageText
+                                latch.countDown()
+                            }
+                        },
+                    )
+                    latch.await(120, java.util.concurrent.TimeUnit.SECONDS)
+                    JSONObject()
+                        .put("ok", verified)
+                        .put("version", info.version)
+                        .put("expected", info.sha256)
+                        .put("bytes", info.sizeBytes)
+                        .put("message", message)
+                }
                 "ping" -> ok("pong")
                 else -> error("Unknown action: $action")
             }

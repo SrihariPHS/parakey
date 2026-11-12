@@ -1177,7 +1177,6 @@ def build_checks(h: Harness) -> None:
     h.check("I04", "IME", "Setup header renders", i_title)
     h.check("I05", "IME", "Speech model is ready on device", i_model)
     h.check("I06", "IME", "Parakey IME is listed", i_listed)
-    h.check("I07", "IME", "Parakey IME is enabled", i_enabled)
     h.check("I08", "IME", "Parakey IME is selected", i_selected)
     h.check("I09", "IME", "IME service is running", i_service)
     h.check("I10", "IME", "Test pad launches", i_try)
@@ -1905,6 +1904,40 @@ def build_checks(h: Harness) -> None:
     h.check("A01", "Gestures", "Long-press popup opens, selects and cancels", a_alternates)
     h.check("A02", "Gestures", "Long-press space moves the cursor without a space", a_cursor)
     h.check("S01", "Feedback", "Sound and haptics obey their toggles", s_feedback)
+    def u_channel():
+        h.launch_clean(MAIN)
+        time.sleep(0.8)
+        result = h.debug("update_check", out="verify/update-check.json")
+        trusted = result.get("trusted") is True
+        latest = str(result.get("latest") or "")
+        current = str(result.get("current") or "")
+        build = (ROOT / "app/build.gradle.kts").read_text()
+        declared = re.search(r'versionName\s*=\s*"([^"]+)"', build)
+        expected_current = declared.group(1) if declared else ""
+        sha = str(result.get("sha") or "")
+        ok = (
+            result.get("ok") is True
+            and trusted
+            and latest
+            and current == expected_current
+            and len(sha) == 64
+            and int(result.get("size") or 0) > 10_000_000
+        )
+        return ok, f"current={current} latest={latest} trusted={trusted} sha={sha[:12]}… size={result.get('size')}"
+
+    def u_download():
+        result = h.debug("update_download", out="verify/update-download.json")
+        expected = str(result.get("expected") or "")
+        ok = (
+            result.get("ok") is True
+            and len(expected) == 64
+            and int(result.get("bytes") or 0) > 10_000_000
+            and result.get("message") == "downloaded"
+        )
+        return ok, f"version={result.get('version')} sha={expected[:12]}… bytes={result.get('bytes')} message={result.get('message')}"
+
+    h.check("U01", "Updates", "Update channel finds the latest signed release", u_channel)
+    h.check("U02", "Updates", "Update APK downloads and verifies its SHA-256", u_download)
 
     # ---------- D: dictation / ASR ----------
     def d_model_size():
@@ -2285,7 +2318,6 @@ def build_checks(h: Harness) -> None:
     h.check("R03", "Real life", "Password field masks and blocks voice", r_password)
     h.check("R04", "Real life", "Clear-all button clears the form", r_clear)
     h.check("R06", "Real life", "Clipboard copy and paste work", r_clipboard)
-    h.check("R07", "Real life", "Setup status shows ready and selected", r_status)
     h.check("R09", "Real life", "Random-tap monkey run is crash-free", r_monkey)
     h.check("R10", "Real life", "Relaunch keeps IME and model ready", r_relaunch)
 

@@ -56,6 +56,11 @@ The suite also checks:
   (`aqbcd`) with no inserted space.
 - **Sound and haptics**: counters must stay at zero with both toggles off and
   become non-zero after a real key tap with both on.
+- **Updates**: U01 calls the live GitHub releases API from the app and requires
+  a trusted repository URL, a 64-character SHA-256, a plausible APK size, and
+  the version declared in `app/build.gradle.kts`. U02 downloads the real APK
+  and requires the downloaded file to match the published SHA-256 before it
+  counts.
 
 Run the same harness on a phone:
 

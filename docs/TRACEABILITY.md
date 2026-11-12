@@ -20,8 +20,9 @@ Every user request is mapped to the artifact that proves it. Check IDs come from
 | 12 | Recently used emoji move to the front | `SettingsStore.emojiRecents`, `KeyboardLayouts.emoji` | K17, JVM `recentEmojiMoveToTheFrontWithoutChangingPageSize` |
 | 13 | Works on Moto G85 and other Android 8.0+ arm64 phones | `minSdk 26`; one APK with `abiFilters` arm64-v8a + x86_64; compatibility doc | B03, B09–B11, `docs/COMPATIBILITY.md`; **API 26 and other phones are unexercised**; Moto R11 is **UNPROVEN in the current report** |
 | 14 | 100-check live gate, ≥99/100 | `scripts/verify.py`, `scripts/gate.sh`, `gate-guards.py` | latest `verification/REPORT.md`: 99/100, all 99 automated checks pass, R11 pending |
-| 15 | Signed release on GitHub, no debug hooks | `app/build.gradle.kts`, debug-only manifest | v1.1.2 asset SHA-256 `4410218ccf3b5119290b28875f98253d9ce4d2577cc1f3ab58b1e823000bb7f4`; apksigner CN=Parakey; no DebugReceiver/SelfTestActivity; B14/P03 |
+| 15 | Signed release on GitHub, no debug hooks | `app/build.gradle.kts`, debug-only manifest | v1.1.3 asset SHA-256 `ce5622e6de46238643328542e521a011a34c7817fb1a169b95702d78c70d65aa`; apksigner CN=Parakey; no DebugReceiver/SelfTestActivity; B14/P03 |
 | 16 | Phone coordinated with other agents, PIN never stored | session coordination; PIN never written to a file | no PIN value in tracked files or history; thread messages are session evidence, not repo evidence |
+| 18 | Optional automatic update check and download | `update/UpdateChecker.kt`, `UpdatePolicy.kt`, `UpdateDownloader.kt`, `UpdateFileProvider.kt`, `MainActivity.buildUpdateCard` | U01 live release lookup, U02 real APK download + SHA-256, JVM `UpdatePolicyTest`, `docs/updates-card.png` |
 | 17 | Multiple agents used to audit the work | two early audits plus five feature-design agents; three deepseek-v4.1-flash auditors completed (traceability, release artifact, feature completeness) | audit findings are folded into the fixes below; the audit transcripts themselves are session evidence, not committed files |
 
 ## Check count
@@ -43,3 +44,4 @@ requested settings.
 - **A skipped-build run does not execute Gradle.** `--skip-build` reports B04–B06 as pass without running them; the committed final report is from a full run, not `--skip-build`.
 - **Numeric pad coverage:** PIN and `TYPE_CLASS_NUMBER` fields are covered by N03. Phone and decimal/signed number fields have code paths (including ABC escape, `.` and `-`) but are not individually automated.
 - **TalkBack remains unimplemented**; the keyboard is one canvas with one content description.
+- **Update install is not automated end-to-end.** U01/U02 prove the check and the verified download; the final APK install is handed to Android's package installer, which no harness can tap non-interactively.

@@ -24,6 +24,36 @@ class SettingsStore(context: Context) {
             prefs.edit().putBoolean("number_row", value).apply()
         }
 
+    var autoUpdateCheck: Boolean
+        get() = prefs.getBoolean("auto_update_check", true)
+        set(value) {
+            prefs.edit().putBoolean("auto_update_check", value).apply()
+        }
+
+    var autoUpdateDownload: Boolean
+        get() = prefs.getBoolean("auto_update_download", false)
+        set(value) {
+            prefs.edit().putBoolean("auto_update_download", value).apply()
+        }
+
+    var updateChannel: String
+        get() = prefs.getString("update_channel", "stable") ?: "stable"
+        set(value) {
+            prefs.edit().putString("update_channel", value).apply()
+        }
+
+    var lastUpdateCheck: Long
+        get() = prefs.getLong("last_update_check", 0L)
+        set(value) {
+            prefs.edit().putLong("last_update_check", value).apply()
+        }
+
+    var dismissedUpdateVersion: String
+        get() = prefs.getString("dismissed_update_version", "") ?: ""
+        set(value) {
+            prefs.edit().putString("dismissed_update_version", value).apply()
+        }
+
     var smartPunctuation: Boolean
         get() = prefs.getBoolean("smart_punctuation", true)
         set(value) {

@@ -2,12 +2,12 @@
 
 **Score: 99/100** (99/100 checks, threshold 99)
 
-- Generated: 2026-11-11T18:03:34+00:00
+- Generated: 2026-11-12T06:28:59+00:00
 - Device: sdk_gphone64_arm64 · Android 15 · arm64-v8a (emulator)
 - Serial: `redacted`
-- APK: `eb3b76346f243b0f…`
+- APK: `dcb95112ca519c46…`
 - Model: `9177a9146cf32ee0…`
-- Duration: 497s
+- Duration: 492s
 
 > The physical Moto G85 gate is pending. This run scores 99/100 on the
 > emulator. Connect the phone and rerun to reach 100/100.
@@ -20,14 +20,14 @@
 | B04 | Build | Debug APK compiles | PASS | gradlew :app:assembleDebug |
 | B05 | Build | JVM unit tests pass | PASS | gradlew :app:testDebugUnitTest |
 | B06 | Build | Android lint passes | PASS | gradlew :app:lintDebug |
-| B07 | Build | Debug APK exists | PASS | /Users/srihari/workspace/parakey/app/build/outputs/apk/debug/app-debug.apk (28549905 bytes) |
-| B08 | Build | APK is under 40 MB (model not bundled) | PASS | 27.2 MB |
+| B07 | Build | Debug APK exists | PASS | /Users/srihari/workspace/parakey/app/build/outputs/apk/debug/app-debug.apk (28660074 bytes) |
+| B08 | Build | APK is under 40 MB (model not bundled) | PASS | 27.3 MB |
 | B09 | Build | APK contains arm64-v8a sherpa JNI | PASS | arm64-v8a sherpa JNI |
 | B10 | Build | APK contains x86_64 sherpa JNI | PASS | x86_64 sherpa JNI |
 | B11 | Build | APK contains ONNX Runtime | PASS | onnxruntime native library |
 | B12 | Build | IME service and method metadata are packaged | PASS | IME service + method metadata + BIND_INPUT_METHOD |
 | B13 | Build | Microphone and internet permissions are packaged | PASS | RECORD_AUDIO + INTERNET |
-| B14 | Build | Package id and version are correct | PASS | package com.parakey.keyboard version 1.1.2 |
+| B14 | Build | Package id and version are correct | PASS | package com.parakey.keyboard version 1.1.3 |
 | B15 | Build | Model weights are not committed | PASS | weight files in repo=0, ignored=True |
 | B16 | Build | License and model attribution exist | PASS | LICENSE + Parakeet CC-BY-4.0 notice |
 | B17 | Build | README documents setup and verification | PASS | README covers installation, Moto G85 and verification |
@@ -40,15 +40,14 @@
 | P07 | Privacy | Model URL is HTTPS | PASS | MODEL_URL=https://huggingface.co/VocaHQ/sherpa-onnx-nemo-parakeet-tdt-ctc-110m-en-int8/res |
 | P08 | Privacy | Dictation path makes no network calls | PASS | network references in dictation path=[] |
 | I01 | IME | ADB device is online | PASS | state=device model=sdk_gphone64_arm64 |
-| I02 | IME | Debug APK is installed | PASS | package:/data/app/~~c5GyVwWbJPTk9R5pTtalfQ==/com.parakey.keyboard-4iaUGqxpjyxmP-EawL4Aow==/base.apk |
-| I03 | IME | Setup activity launches | PASS | topResumedActivity=ActivityRecord{68982ec u0 com.parakey.keyboard/.MainActivity t1309} |
+| I02 | IME | Debug APK is installed | PASS | package:/data/app/~~VwRUYPz2U38OgXOTjNSXYA==/com.parakey.keyboard-gOWyfZJkOkji3DF2RI8yvg==/base.apk |
+| I03 | IME | Setup activity launches | PASS | topResumedActivity=ActivityRecord{ace5c27 u0 com.parakey.keyboard/.MainActivity t1328} |
 | I04 | IME | Setup header renders | PASS | setup header renders |
 | I05 | IME | Speech model is ready on device | PASS | modelReady=True |
 | I06 | IME | Parakey IME is listed | PASS | Parakey IME is listed |
-| I07 | IME | Parakey IME is enabled | PASS | Parakey IME is enabled |
 | I08 | IME | Parakey IME is selected | PASS | default_input_method=com.parakey.keyboard/.ParakeyImeService |
 | I09 | IME | IME service is running | PASS | service state={'voiceMode': False, 'recording': False, 'processing': False, 'clipboardMode': False, 'suggestions': True, 'micEnabled': True, 'page': 'LETTERS', 'shift': 'ON', 'width': 1080, 'height': 819, 'bottomInset': 63, 'numberRow': False, 'alternatePopup': False, 'alternateSelected': -1, 'curso |
-| I10 | IME | Test pad launches | PASS | topResumedActivity=ActivityRecord{18ee2aa u0 com.parakey.keyboard/.TryActivity t1310} |
+| I10 | IME | Test pad launches | PASS | topResumedActivity=ActivityRecord{ae9e47a u0 com.parakey.keyboard/.TryActivity t1329} |
 | I11 | IME | Message field is focused | PASS | focused=true |
 | I12 | IME | Software keyboard is shown | PASS | shown=True |
 | I13 | IME | Keyboard height is sane | PASS | keyboard height=819px |
@@ -62,7 +61,7 @@
 | K05 | Keyboard | Period key inserts a period | PASS | text='q.' |
 | K06 | Keyboard | Comma key inserts a comma | PASS | text='q,' |
 | K07 | Keyboard | Backspace deletes a character | PASS | text='qw' |
-| K08 | Keyboard | Long-press backspace repeats | PASS | after long-press text='a' after swipe='hello ' |
+| K08 | Keyboard | Long-press backspace repeats | PASS | after long-press text='' after swipe='hello ' |
 | K09 | Keyboard | Enter inserts a newline | PASS | text='q\n' |
 | K10 | Keyboard | Shift toggles case | PASS | text='qW' |
 | K11 | Keyboard | Double-shift caps lock | PASS | shift=CAPS text='AB' |
@@ -80,6 +79,8 @@
 | A01 | Gestures | Long-press popup opens, selects and cancels | PASS | popup=True selected=2 text='ê' base='e' cancelled='' |
 | A02 | Gestures | Long-press space moves the cursor without a space | PASS | cursorMode=True before='abcd' after='aqbcd' step=126px |
 | S01 | Feedback | Sound and haptics obey their toggles | PASS | off=0/0 on=1/1 |
+| U01 | Updates | Update channel finds the latest signed release | PASS | current=1.1.3 latest=1.1.2 trusted=True sha=4410218ccf3b… size=25968337 |
+| U02 | Updates | Update APK downloads and verifies its SHA-256 | PASS | version=1.1.2 sha=4410218ccf3b… bytes=25968337 message=downloaded |
 | D01 | ASR | Model file is present at the expected size | PASS | model bytes=131652171 expected=131652171 |
 | D02 | ASR | Tokenizer is present at the expected size | PASS | tokens bytes=9953 expected=9953 |
 | D03 | ASR | Model checksum matches | PASS | model=9177a9146cf32ee0… tokens=450e56bd2f03… path=/data/user/0/com.parakey.keyboard/files/models/parakeet-110m/model.int8.onnx |
@@ -90,12 +91,12 @@
 | D08 | ASR | Fixture q4 transcription | PASS | WER=0.000 text='Hello world. This is a test of the speech recognition model' |
 | D09 | ASR | Fixture q5 transcription | PASS | WER=0.000 text='I would like a large coffee with oat milk. please' |
 | D10 | ASR | Long audio transcription | PASS | WER=0.019 audioMs=17795 |
-| D11 | ASR | q1 real-time factor | PASS | RTF=0.07892628205128205 |
-| D12 | ASR | q3 real-time factor | PASS | RTF=0.05303236333967909 |
-| D13 | ASR | Long audio real-time factor | PASS | RTF=0.019837032874402923 |
-| D14 | ASR | q3 latency | PASS | elapsedMs=195 |
+| D11 | ASR | q1 real-time factor | PASS | RTF=0.052083333333333336 |
+| D12 | ASR | q3 real-time factor | PASS | RTF=0.057383736741909164 |
+| D13 | ASR | Long audio real-time factor | PASS | RTF=0.025793762292778872 |
+| D14 | ASR | q3 latency | PASS | elapsedMs=211 |
 | D16 | ASR | Empty audio is handled | PASS | {'ok': True, 'text': '', 'elapsedMs': 0, 'audioMs': 0, 'mode': 'empty'} |
-| D17 | ASR | Very short audio is handled | PASS | {'ok': True, 'text': '', 'elapsedMs': 17, 'audioMs': 100, 'mode': 'short'} |
+| D17 | ASR | Very short audio is handled | PASS | {'ok': True, 'text': '', 'elapsedMs': 14, 'audioMs': 100, 'mode': 'short'} |
 | D18 | ASR | AudioRecord captures 16 kHz samples | PASS | sampleCount=48000 |
 | D19 | ASR | AudioRecord captures non-silence | PASS | loopback peak=1.0 samples=48000 attempts=1 |
 | D20 | ASR | Mic key starts recording | PASS | voiceMode=True recording=True |
@@ -109,8 +110,7 @@
 | R03 | Real life | Password field masks and blocks voice | PASS | passwordAttr=true text='••••••' micEnabled=False |
 | R04 | Real life | Clear-all button clears the form | PASS | before=['TestName', 'test@example.com', 'Hello'] after=['', '', '', ''] |
 | R06 | Real life | Clipboard copy and paste work | PASS | first='FIRST_CLIP' second='COPY_SELECTION' |
-| R07 | Real life | Setup status shows ready and selected | PASS | setup shows model READY and keyboard ENABLED/SELECTED |
-| R09 | Real life | Random-tap monkey run is crash-free | PASS | pid=15671 crash=False |
+| R09 | Real life | Random-tap monkey run is crash-free | PASS | pid=16973 crash=False |
 | R10 | Real life | Relaunch keeps IME and model ready | PASS | default=com.parakey.keyboard/.ParakeyImeService modelReady=True shown=True |
 | R12 | Real life | Zero app crashes in the full suite | PASS | no FATAL EXCEPTION from com.parakey.keyboard |
 | R11 | Physical | Moto G85 speaker-loopback mic gate | FAIL | PENDING: no physical phone. Connect the Moto G85 with USB debugging (or wireless ADB) and rerun scripts/verify.py. |
